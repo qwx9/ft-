@@ -224,7 +224,7 @@ static void setScrollBarThumbCoords(uint16_t scrollBarID)
 			{
 				dTmp = (scrollBar->w / (double)scrollBar->end) * scrollBar->page;
 				tmp32 = (int32_t)(dTmp + 0.5);
-				realThumbLength = (int16_t)CLAMP(tmp32, 1, scrollBar->w);
+				realThumbLength = (int16_t)CLAMP(tmp32, 1, (int)scrollBar->w);
 			}
 			else
 			{
@@ -251,7 +251,7 @@ static void setScrollBarThumbCoords(uint16_t scrollBarID)
 		}
 
 		// prevent scrollbar thumb coords from being outside of the scrollbar area
-		thumbX = CLAMP(thumbX, scrollBar->x, scrollEnd-1);
+		thumbX = CLAMP((int)thumbX, (int)scrollBar->x, (int)scrollEnd-1);
 		if (thumbX+thumbW > scrollEnd)
 			thumbW = scrollEnd - thumbX;
 	}
@@ -267,7 +267,7 @@ static void setScrollBarThumbCoords(uint16_t scrollBarID)
 		{
 			dTmp = (scrollBar->h / (double)scrollBar->end) * scrollBar->page;
 			tmp32 = (int32_t)(dTmp + 0.5);
-			realThumbLength = (int16_t)CLAMP(tmp32, 1, scrollBar->h);
+			realThumbLength = (int16_t)CLAMP(tmp32, 1, (int)scrollBar->h);
 		}
 		else
 		{
@@ -293,7 +293,7 @@ static void setScrollBarThumbCoords(uint16_t scrollBarID)
 		}
 
 		// prevent scrollbar thumb coords from being outside of the scrollbar area
-		thumbY = CLAMP(thumbY, scrollBar->y, scrollEnd - 1);
+		thumbY = CLAMP((int)thumbY, (int)scrollBar->y, (int)scrollEnd - 1);
 		if (thumbY+thumbH > scrollEnd)
 			thumbH = scrollEnd - thumbY;
 	}
@@ -523,7 +523,7 @@ bool testScrollBarMouseDown(void)
 					}
 
 					assert(scrollBar->w > 0);
-					scrollPos = CLAMP(scrollPos, 0, scrollBar->w);
+					scrollPos = CLAMP((int)scrollPos, 0, (int)scrollBar->w);
 
 					length = scrollBar->w + (scrollBar->realThumbLength - scrollBar->thumbW);
 					if (length < 1)
@@ -549,7 +549,7 @@ bool testScrollBarMouseDown(void)
 					scrollPos = mouse.lastScrollY - scrollBar->y - mouse.saveMouseY;
 
 					assert(scrollBar->h > 0);
-					scrollPos = CLAMP(scrollPos, 0, scrollBar->h);
+					scrollPos = CLAMP((int)scrollPos, 0, (int)scrollBar->h);
 
 					length = scrollBar->h + (scrollBar->realThumbLength - scrollBar->thumbH);
 					if (length < 1)
@@ -617,7 +617,7 @@ void handleScrollBarsWhileMouseDown(void)
 			}
 
 			assert(scrollBar->w > 0);
-			scrollX = CLAMP(scrollX, 0, scrollBar->w);
+			scrollX = CLAMP((int)scrollX, 0, (int)scrollBar->w);
 
 			length = scrollBar->w + (scrollBar->realThumbLength - scrollBar->thumbW);
 			if (length < 1)
@@ -641,7 +641,7 @@ void handleScrollBarsWhileMouseDown(void)
 			scrollY = mouse.lastScrollY - mouse.saveMouseY - scrollBar->y;
 
 			assert(scrollBar->h > 0);
-			scrollY = CLAMP(scrollY, 0, scrollBar->h);
+			scrollY = CLAMP((int)scrollY, 0, (int)scrollBar->h);
 
 			length = scrollBar->h + (scrollBar->realThumbLength - scrollBar->thumbH);
 			if (length < 1)
