@@ -1,0 +1,130 @@
+</$objtype/mkfile
+
+BIN=/$objtype/bin/audio
+TARG=ft2
+CFLAGS=$CFLAGS -p -Isrc -I/sys/include/npe -D__plan9__
+
+HEADERS=\
+	src/ft2_about.h\
+	src/ft2_audio.h\
+	src/ft2_audioselector.h\
+	src/ft2_bmp.h\
+	src/ft2_checkboxes.h\
+	src/ft2_config.h\
+	src/ft2_diskop.h\
+	src/ft2_edit.h\
+	src/ft2_events.h\
+	src/ft2_gfxdata.h\
+	src/ft2_gui.h\
+	src/ft2_header.h\
+	src/ft2_help.h\
+	src/ft2_inst_ed.h\
+	src/ft2_keyboard.h\
+	src/ft2_midi.h\
+	src/ft2_module_loader.h\
+	src/ft2_module_saver.h\
+	src/ft2_mouse.h\
+	src/ft2_nibbles.h\
+	src/ft2_palette.h\
+	src/ft2_pattern_draw.h\
+	src/ft2_pattern_ed.h\
+	src/ft2_pushbuttons.h\
+	src/ft2_radiobuttons.h\
+	src/ft2_replayer.h\
+	src/ft2_sample_ed.h\
+	src/ft2_sample_ed_features.h\
+	src/ft2_sample_loader.h\
+	src/ft2_sample_saver.h\
+	src/ft2_sampling.h\
+	src/ft2_scopedraw.h\
+	src/ft2_scopes.h\
+	src/ft2_scrollbars.h\
+	src/ft2_structs.h\
+	src/ft2_sysreqs.h\
+	src/ft2_tables.h\
+	src/ft2_textboxes.h\
+	src/ft2_trim.h\
+	src/ft2_unicode.h\
+	src/ft2_video.h\
+	src/ft2_wav_renderer.h\
+	src/helpdata/ft2_help_data.h\
+	src/mixer/ft2_center_mix.h\
+	src/mixer/ft2_mix.h\
+	src/mixer/ft2_mix_macros.h\
+	src/mixer/ft2_silence_mix.h\
+	src/mixer/ft2_windowed_sinc.h\
+
+OFILES=\
+	src/ft2_about.$O\
+	src/ft2_audio.$O\
+	src/ft2_audioselector.$O\
+	src/ft2_bmp.$O\
+	src/ft2_checkboxes.$O\
+	src/ft2_config.$O\
+	src/ft2_diskop.$O\
+	src/ft2_edit.$O\
+	src/ft2_events.$O\
+	src/ft2_gui.$O\
+	src/ft2_help.$O\
+	src/ft2_inst_ed.$O\
+	src/ft2_keyboard.$O\
+	src/ft2_main.$O\
+	src/ft2_midi.$O\
+	src/ft2_module_loader.$O\
+	src/ft2_module_saver.$O\
+	src/ft2_mouse.$O\
+	src/ft2_nibbles.$O\
+	src/ft2_palette.$O\
+	src/ft2_pattern_draw.$O\
+	src/ft2_pattern_ed.$O\
+	src/ft2_pushbuttons.$O\
+	src/ft2_radiobuttons.$O\
+	src/ft2_replayer.$O\
+	src/ft2_sample_ed.$O\
+	src/ft2_sample_ed_features.$O\
+	src/ft2_sample_loader.$O\
+	src/ft2_sample_saver.$O\
+	src/ft2_sampling.$O\
+	src/ft2_scopedraw.$O\
+	src/ft2_scopes.$O\
+	src/ft2_scrollbars.$O\
+	src/ft2_structs.$O\
+	src/ft2_sysreqs.$O\
+	src/ft2_tables.$O\
+	src/ft2_textboxes.$O\
+	src/ft2_trim.$O\
+	src/ft2_unicode.$O\
+	src/ft2_video.$O\
+	src/ft2_wav_renderer.$O\
+	src/gfxdata/ft2_bmp_fonts.$O\
+	src/gfxdata/ft2_bmp_gui.$O\
+	src/gfxdata/ft2_bmp_instr.$O\
+	src/gfxdata/ft2_bmp_logo.$O\
+	src/gfxdata/ft2_bmp_looppins.$O\
+	src/gfxdata/ft2_bmp_midi.$O\
+	src/gfxdata/ft2_bmp_mouse.$O\
+	src/gfxdata/ft2_bmp_nibbles.$O\
+	src/gfxdata/ft2_bmp_scopes.$O\
+	src/mixer/ft2_center_mix.$O\
+	src/mixer/ft2_mix.$O\
+	src/mixer/ft2_silence_mix.$O\
+	src/mixer/ft2_windowed_sinc.$O\
+	src/modloaders/ft2_load_digi.$O\
+	src/modloaders/ft2_load_mod.$O\
+	src/modloaders/ft2_load_s3m.$O\
+	src/modloaders/ft2_load_stk.$O\
+	src/modloaders/ft2_load_stm.$O\
+	src/modloaders/ft2_load_xm.$O\
+	src/smploaders/ft2_load_aiff.$O\
+	src/smploaders/ft2_load_iff.$O\
+	src/smploaders/ft2_load_raw.$O\
+	src/smploaders/ft2_load_wav.$O\
+
+default:V: all
+
+CLEANFILES=$OFILES
+
+</sys/src/cmd/mkone
+
+%.$O: %.c
+	$CC $CFLAGS -o $target $stem.c
