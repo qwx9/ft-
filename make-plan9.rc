@@ -27,7 +27,7 @@ for(f in src/*.[ch] src/*/*.[ch]){
 	}
 }
 
-{ test -d npe || {
+{ test -d npe -o -d /sys/include/npe || {
 	hget https://git.sr.ht/~ft/npe/archive/master.tar.gz | tar xz &&
 	cd npe-master &&
 	mk install &&
