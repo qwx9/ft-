@@ -4,13 +4,14 @@ BIN=/$objtype/bin/audio
 TARG=ft2
 CFLAGS=$CFLAGS -p -Isrc -I/sys/include/npe -D__plan9__
 
-HEADERS=\
+HFILES=\
 	src/ft2_about.h\
 	src/ft2_audio.h\
 	src/ft2_audioselector.h\
 	src/ft2_bmp.h\
 	src/ft2_checkboxes.h\
 	src/ft2_config.h\
+	src/ft2_cpu.h\
 	src/ft2_diskop.h\
 	src/ft2_edit.h\
 	src/ft2_events.h\
@@ -36,8 +37,6 @@ HEADERS=\
 	src/ft2_sample_loader.h\
 	src/ft2_sample_saver.h\
 	src/ft2_sampling.h\
-	src/ft2_scopedraw.h\
-	src/ft2_scopes.h\
 	src/ft2_scrollbars.h\
 	src/ft2_structs.h\
 	src/ft2_sysreqs.h\
@@ -53,6 +52,9 @@ HEADERS=\
 	src/mixer/ft2_mix_macros.h\
 	src/mixer/ft2_silence_mix.h\
 	src/mixer/ft2_windowed_sinc.h\
+	src/scopes/ft2_scope_macros.h\
+	src/scopes/ft2_scopedraw.h\
+	src/scopes/ft2_scopes.h\
 
 OFILES=\
 	src/ft2_about.$O\
@@ -85,8 +87,6 @@ OFILES=\
 	src/ft2_sample_loader.$O\
 	src/ft2_sample_saver.$O\
 	src/ft2_sampling.$O\
-	src/ft2_scopedraw.$O\
-	src/ft2_scopes.$O\
 	src/ft2_scrollbars.$O\
 	src/ft2_structs.$O\
 	src/ft2_sysreqs.$O\
@@ -115,7 +115,10 @@ OFILES=\
 	src/modloaders/ft2_load_stk.$O\
 	src/modloaders/ft2_load_stm.$O\
 	src/modloaders/ft2_load_xm.$O\
+	src/scopes/ft2_scopedraw.$O\
+	src/scopes/ft2_scopes.$O\
 	src/smploaders/ft2_load_aiff.$O\
+	src/smploaders/ft2_load_flac.$O\
 	src/smploaders/ft2_load_iff.$O\
 	src/smploaders/ft2_load_raw.$O\
 	src/smploaders/ft2_load_wav.$O\
