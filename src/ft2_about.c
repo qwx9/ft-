@@ -26,7 +26,7 @@ typedef struct
 } matrix_t;
 
 static char *customText1 = "Clone by Olav \"8bitbubsy\" S\025rensen";
-static char *customText2 = "www.16-bits.org";
+static char *customText2 = "https://16-bits.org";
 static char customText3[64];
 
 static int16_t customText1Y, customText2Y, customText3Y;
@@ -142,7 +142,7 @@ static void starfield(void)
 
 			d ^= 255;
 
-			int32_t r = d - 68;
+			int32_t r = d - 75;
 			if (r < 0)
 				r = 0;
 

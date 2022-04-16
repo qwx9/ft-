@@ -169,7 +169,7 @@ void flipFrame(void)
 
 	SDL_UpdateTexture(video.texture, NULL, video.frameBuffer, SCREEN_W * sizeof (int32_t));
 
-	// SDL2 bug on Windows (?): This function consumes ever-increasing memory if the program is minimized
+	// SDL 2.0.14 bug on Windows (?): This function consumes ever-increasing memory if the program is minimized
 	if (!minimized)
 		SDL_RenderClear(video.renderer);
 
@@ -221,15 +221,22 @@ void showErrorMsgBox(const char *fmt, ...)
 static void updateRenderSizeVars(void)
 {
 	float fXScale, fYScale;
-	SDL_DisplayMode dm;
 
-	int32_t di = SDL_GetWindowDisplayIndex(video.window);
-	if (di < 0)
-		di = 0; // return display index 0 (default) on error
+	if (video.useDesktopMouseCoords)
+	{
+		SDL_DisplayMode dm;
+		int32_t di = SDL_GetWindowDisplayIndex(video.window);
+		if (di < 0)
+			di = 0; // return display index 0 (default) on error
 
-	SDL_GetDesktopDisplayMode(di, &dm);
-	video.displayW = dm.w;
-	video.displayH = dm.h;
+		SDL_GetDesktopDisplayMode(di, &dm);
+		video.displayW = dm.w;
+		video.displayH = dm.h;
+	}
+	else
+	{
+		SDL_GetWindowSize(video.window, &video.displayW, &video.displayH);
+	}
 
 	if (video.fullscreen)
 	{
@@ -247,10 +254,15 @@ static void updateRenderSizeVars(void)
 			video.renderW = (int32_t)(SCREEN_W * fXScale);
 			video.renderH = (int32_t)(SCREEN_H * fYScale);
 
-			// retina high-DPI hackery (SDL2 is bad at reporting actual rendering sizes on macOS w/ high-DPI)
-#ifdef __APPLE__
+			// high-DPI hackery:
+			//  On high-DPI systems, the display w/h are given in logical pixels,
+			//  but the renderer size is given in physical pixels. Since our internal
+			//  render{X,Y,W,H} variables need to be in logical coordinates, as that's
+			//  what mouse input uses, scale them by the screen's DPI scale factor,
+			//  which is the physical (renderer) size / the logical (window) size.
+			//  On non high-DPI systems, this is effectively a no-op.
 			int32_t actualScreenW, actualScreenH;
-			SDL_GL_GetDrawableSize(video.window, &actualScreenW, &actualScreenH);
+			SDL_GetRendererOutputSize(video.renderer, &actualScreenW, &actualScreenH);
 
 			const double dXUpscale = (const double)actualScreenW / video.displayW;
 			const double dYUpscale = (const double)actualScreenH / video.displayH;
@@ -258,7 +270,7 @@ static void updateRenderSizeVars(void)
 			// downscale back to correct sizes
 			if (dXUpscale != 0.0) video.renderW = (int32_t)(video.renderW / dXUpscale);
 			if (dYUpscale != 0.0) video.renderH = (int32_t)(video.renderH / dYUpscale);
-#endif
+
 			video.renderX = (video.displayW - video.renderW) >> 1;
 			video.renderY = (video.displayH - video.renderH) >> 1;
 		}
@@ -306,9 +318,9 @@ void leaveFullScreen(void)
 	SDL_SetWindowFullscreen(video.window, 0);
 	SDL_RenderSetLogicalSize(video.renderer, SCREEN_W, SCREEN_H);
 
-	setWindowSizeFromConfig(false); // also updates mouse scaling and render size vars
+	setWindowSizeFromConfig(false);
+
 	SDL_SetWindowSize(video.window, SCREEN_W * video.upscaleFactor, SCREEN_H * video.upscaleFactor);
-	SDL_SetWindowPosition(video.window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 	SDL_SetWindowGrab(video.window, SDL_FALSE);
 
 	updateRenderSizeVars();
@@ -911,10 +923,6 @@ bool setupWindow(void)
 
 	setWindowSizeFromConfig(false);
 
-#if SDL_PATCHLEVEL >= 5 // SDL 2.0.5 or later
-	SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
-#endif
-
 	SDL_GetDesktopDisplayMode(0, &dm);
 	video.dMonitorRefreshRate = (double)dm.refresh_rate;
 
@@ -1006,10 +1014,10 @@ bool setupRenderer(void)
 	else
 		SDL_ShowCursor(SDL_FALSE);
 
-	// Workaround: SDL_GetGlobalMouseState() doesn't work with KMSDRM
+	// Workaround: SDL_GetGlobalMouseState() doesn't work with KMSDRM/Wayland
 	video.useDesktopMouseCoords = true;
 	const char *videoDriver = SDL_GetCurrentVideoDriver();
-	if (videoDriver != NULL && strcmp("KMSDRM", videoDriver) == 0)
+	if (videoDriver != NULL && (strcmp("KMSDRM", videoDriver) == 0 || strcmp("wayland", videoDriver) == 0))
 		video.useDesktopMouseCoords = false;
 
 	SDL_SetRenderDrawColor(video.renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);

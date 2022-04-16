@@ -155,17 +155,23 @@ bool cloneSample(sample_t *src, sample_t *dst)
 	freeSmpData(dst);
 	memcpy(dst, src, sizeof (sample_t));
 
+	// zero out stuff that wasn't supposed to be cloned
 	dst->origDataPtr = dst->dataPtr = NULL;
 	dst->isFixed = false;
+	dst->fixedPos = 0;
 
+	// if source sample isn't empty, allocate room and copy it over (and fix it)
 	if (src->length > 0 && src->dataPtr != NULL)
 	{
 		bool sample16Bit = !!(src->flags & SAMPLE_16BIT);
 		if (!allocateSmpDataPtr(&sp, src->length, sample16Bit))
+		{
+			dst->length = 0;
 			return false;
+		}
 
-		memcpy(sp.ptr, src->dataPtr, src->length);
 		setSmpDataPtr(dst, &sp);
+		memcpy(dst->dataPtr, src->dataPtr, src->length << sample16Bit);
 		fixSample(dst);
 	}
 
@@ -1890,7 +1896,7 @@ static bool cutRange(bool cropMode, int32_t r1, int32_t r2)
 				return false;
 			}
 
-			memcpy(smpCopyBuff, &s->dataPtr[r1], (r2-r1) << sample16Bit);
+			memcpy(smpCopyBuff, &s->dataPtr[r1 << sample16Bit], (r2-r1) << sample16Bit);
 			smpCopyBits = sample16Bit ? 16 : 8;
 		}
 	}
@@ -3315,8 +3321,8 @@ void handleSampleDataMouseDown(bool mouseButtonHeld)
 	if (editor.curInstr == 0)
 		return;
 
-	const int32_t mx = CLAMP(mouse.x, 0, SCREEN_W+8); // allow some pixels outside of the screen
-	const int32_t my = CLAMP(mouse.y, 0, SCREEN_H-1);
+	int32_t mx = CLAMP(mouse.x, 0, SCREEN_W+8); // allow some pixels outside of the screen
+	int32_t my = CLAMP(mouse.y, 0, SCREEN_H-1);
 
 	if (!mouseButtonHeld)
 	{
@@ -3405,13 +3411,20 @@ void handleSampleDataMouseDown(bool mouseButtonHeld)
 			else if (ui.sampleDataOrLoopDrag >= 0)
 			{
 				// mark data
+
 				lastMouseX = mx;
 
-				if (lastMouseX > ui.sampleDataOrLoopDrag)
+				/* Edge-case hack for fullscreen sample marking where the width
+				** of the image fills the whole screen (or close).
+				*/
+				if (video.fullscreen && video.renderW >= video.displayW-5 && mx == SCREEN_W-1)
+					mx = SCREEN_W;
+
+				if (mx > ui.sampleDataOrLoopDrag)
 					setSampleRange(ui.sampleDataOrLoopDrag, mx);
-				else if (lastMouseX == ui.sampleDataOrLoopDrag)
+				else if (mx == ui.sampleDataOrLoopDrag)
 					setSampleRange(ui.sampleDataOrLoopDrag, ui.sampleDataOrLoopDrag);
-				else if (lastMouseX < ui.sampleDataOrLoopDrag)
+				else if (mx < ui.sampleDataOrLoopDrag)
 					setSampleRange(mx, ui.sampleDataOrLoopDrag);
 			}
 		}
