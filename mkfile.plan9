@@ -19,6 +19,7 @@ HFILES=\
 	src/ft2_gui.h\
 	src/ft2_header.h\
 	src/ft2_help.h\
+	src/ft2_hpc.h\
 	src/ft2_inst_ed.h\
 	src/ft2_keyboard.h\
 	src/ft2_midi.h\
@@ -68,6 +69,7 @@ OFILES=\
 	src/ft2_events.$O\
 	src/ft2_gui.$O\
 	src/ft2_help.$O\
+	src/ft2_hpc.$O\
 	src/ft2_inst_ed.$O\
 	src/ft2_keyboard.$O\
 	src/ft2_main.$O\
