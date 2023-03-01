@@ -38,7 +38,7 @@
                    "Try to mention what you did before the crash happened.\n" \
                    "My email can be found at the bottom of www.16-bits.org."
 
-static bool backupMadeAfterCrash;
+static bool backupMadeAfterCrash, didDropFile;
 
 #ifdef _WIN32
 #define SYSMSG_FILE_ARG (WM_USER+1)
@@ -48,52 +48,16 @@ static bool backupMadeAfterCrash;
 static HWND hWnd;
 static HANDLE oneInstHandle, hMapFile;
 static LPCTSTR sharedMemBuf;
-
-// used for Windows usleep() implementation
-static NTSTATUS (__stdcall *NtDelayExecution)(BOOL Alertable, PLARGE_INTEGER DelayInterval);
 #endif
 
-static void handleInput(void);
-
-// usleep() implementation for Windows (Warning: This might not be future-safe!)
-#ifdef _WIN32
-void usleep(uint32_t usec)
-{
-	LARGE_INTEGER lpDueTime;
-
-	if (NtDelayExecution == NULL)
-	{
-		// NtDelayExecution() is not available (shouldn't happen), use regular sleep()
-		Sleep(usec / 1000);
-	}
-	else
-	{
-		// this prevents a 64-bit MUL (will not overflow with the ranges we use anyway)
-		lpDueTime.HighPart = UINT32_MAX;
-		lpDueTime.LowPart = (DWORD)(-10 * (int32_t)usec);
-
-		NtDelayExecution(false, &lpDueTime);
-	}
-}
-
-void setupWin32Usleep(void)
-{
-	NtDelayExecution = (NTSTATUS (__stdcall *)(BOOL, PLARGE_INTEGER))GetProcAddress(GetModuleHandle("ntdll.dll"), "NtDelayExecution");
-	timeBeginPeriod(0); // enter highest timer resolution
-}
-
-void freeWin32Usleep(void)
-{
-	timeEndPeriod(0); // exit highest timer resolution
-}
-#endif
+static void handleSDLEvents(void);
 
 void readInput(void)
 {
 	readMouseXY();
 	readKeyModifiers();
 	setSyncedReplayerVars();
-	handleInput();
+	handleSDLEvents();
 }
 
 void handleThreadEvents(void)
@@ -402,21 +366,13 @@ void handleWaitVblQuirk(SDL_Event *event)
 		else if (event->window.event == SDL_WINDOWEVENT_SHOWN)
 			video.windowHidden = false;
 
-		if (video.vsync60HzPresent)
-		{
-			/* If we minimize the window and vsync is present, vsync is temporarily turned off.
-			** recalc waitVBL() vars so that it can sleep properly in said mode.
-			*/
-			if (event->window.event == SDL_WINDOWEVENT_MINIMIZED ||
-				event->window.event == SDL_WINDOWEVENT_FOCUS_LOST)
-			{
-				setupWaitVBL();
-			}
-		}
+		// reset vblank end time if we minimize window
+		if (event->window.event == SDL_WINDOWEVENT_MINIMIZED || event->window.event == SDL_WINDOWEVENT_FOCUS_LOST)
+			hpc_ResetCounters(&video.vblankHpc);
 	}
 }
 
-static void handleInput(void)
+static void handleSDLEvents(void)
 {
 	SDL_Event event;
 
@@ -492,6 +448,10 @@ static void handleInput(void)
 			editor.autoPlayOnDrop = false;
 			loadDroppedFile(event.drop.file, true);
 			SDL_free(event.drop.file);
+
+			// kludge: allow focus-clickthrough after drag-n-drop
+			SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
+			didDropFile = true;
 		}
 		else if (event.type == SDL_QUIT)
 		{
@@ -529,6 +489,13 @@ static void handleInput(void)
 		else if (event.type == SDL_MOUSEBUTTONUP)
 		{
 			mouseButtonUpHandler(event.button.button);
+
+			// kludge: we drag-n-dropped a file before this mouse click release, restore focus-clickthrough mode
+			if (didDropFile)
+			{
+				didDropFile = false;
+				SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "0");
+			}
 		}
 		else if (event.type == SDL_MOUSEBUTTONDOWN)
 		{

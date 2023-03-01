@@ -32,6 +32,12 @@ static SDL_Cursor *cursors[NUM_CURSORS];
 
 static bool setSystemCursor(SDL_Cursor *cur)
 {
+	if (config.specialFlags2 & USE_OS_MOUSE_POINTER)
+	{
+		SDL_SetCursor(SDL_GetDefaultCursor());
+		return true;
+	}
+
 	if (cur == NULL)
 	{
 		SDL_SetCursor(SDL_GetDefaultCursor());
@@ -77,8 +83,18 @@ bool createMouseCursors(void) // creates scaled SDL surfaces for current mouse p
 		if (surface == NULL)
 		{
 			freeMouseCursors();
-			config.specialFlags2 &= ~HARDWARE_MOUSE; // enable software mouse
-			SDL_ShowCursor(SDL_FALSE);
+
+			if (config.specialFlags2 & USE_OS_MOUSE_POINTER)
+			{
+				SDL_ShowCursor(SDL_TRUE);
+			}
+			else
+			{
+				// enable software mouse
+				config.specialFlags2 &= ~HARDWARE_MOUSE;
+				SDL_ShowCursor(SDL_FALSE);
+			}
+
 			return false;
 		}
 
@@ -148,8 +164,18 @@ bool createMouseCursors(void) // creates scaled SDL surfaces for current mouse p
 		{
 			SDL_FreeSurface(surface);
 			freeMouseCursors();
-			config.specialFlags2 &= ~HARDWARE_MOUSE; // enable software mouse
-			SDL_ShowCursor(SDL_FALSE);
+
+			if (config.specialFlags2 & USE_OS_MOUSE_POINTER)
+			{
+				SDL_ShowCursor(SDL_TRUE);
+			}
+			else
+			{
+				// enable software mouse
+				config.specialFlags2 &= ~HARDWARE_MOUSE;
+				SDL_ShowCursor(SDL_FALSE);
+			}
+
 			return false;
 		}
 
@@ -658,8 +684,8 @@ void mouseButtonDownHandler(uint8_t mouseButton)
 		return;
 	}
 
-	// mouse 0,0 = open exit dialog
-	if (mouse.x == 0 && mouse.y == 0)
+	// mouse 0,0 = open exit dialog (also make sure the test always works in fullscreen mode)
+	if ((mouse.x == 0 && mouse.y == 0) || (video.fullscreen && (video.renderX > 0 || video.renderY > 0) && (mouse.rawX == 0 && mouse.rawY == 0)))
 	{
 		if (quitBox(false) == 1)
 			editor.throwExit = true;
@@ -808,8 +834,12 @@ void readMouseXY(void)
 	{
 		mouse.buttonState = SDL_GetGlobalMouseState(&mx, &my);
 
+		mouse.absX = mx;
+		mouse.absY = my;
+
 		// convert desktop coords to window coords
 		SDL_GetWindowPosition(video.window, &windowX, &windowY);
+
 		mx -= windowX;
 		my -= windowY;
 	}
@@ -817,7 +847,13 @@ void readMouseXY(void)
 	{
 		// special mode for KMSDRM (XXX: Confirm that this still works...)
 		mouse.buttonState = SDL_GetMouseState(&mx, &my);
+
+		mouse.absX = mx;
+		mouse.absY = my;
 	}
+
+	mouse.rawX = mx;
+	mouse.rawY = my;
 
 	if (video.fullscreen)
 	{

@@ -311,7 +311,7 @@ void setFrequencyTable(bool linearPeriodsFlag)
 	if (ui.configScreenShown && editor.currConfigScreen == CONFIG_SCREEN_IO_DEVICES)
 	{
 		// update "frequency table" radiobutton, if it's shown
-		setConfigIORadioButtonStates(); 
+		setConfigIORadioButtonStates();
 
 		// update mid-C freq. in instr. editor (it can slightly differ between Amiga/linear)
 		if (ui.instEditorShown)
@@ -404,7 +404,7 @@ void calcReplayerLogTab(void) // for linear period -> hz calculation
 		dExp2MulTab[i] = 1.0 / exp2(i); // 1/(2^i)
 
 	for (int32_t i = 0; i < 4*12*16; i++)
-		dLogTab[i] = 8363.0 * exp2(i / 768.0) * 256.0;
+		dLogTab[i] = (8363.0 * 256.0) * exp2(i / (4.0 * 12.0 * 16.0));
 }
 
 void calcReplayerVars(int32_t audioFreq)
@@ -839,7 +839,7 @@ static void setEnvelopePos(channel_t *ch, uint8_t param)
 	}
 
 	// *** PANNING ENVELOPE ***
-	if (ins->volEnvFlags & ENV_SUSTAIN) // What..? An FT2 bug!?
+	if (ins->volEnvFlags & ENV_SUSTAIN) // FT2 PLAYER BUG: Should've been ins->panEnvFlags
 	{
 		ch->panEnvTick = param-1;
 
@@ -2215,6 +2215,15 @@ static void getNextPos(void)
 			song.pattNum = song.orders[song.songPos & 0xFF];
 			song.currNumRows = patternNumRows[song.pattNum & 0xFF];
 		}
+
+		/*
+		** Because of a bug in FT2, pattern loop commands will manipulate
+		** the row the next pattern will begin at (should be 0).
+		** However, this can overflow the number of rows (length) for that
+		** pattern and cause out-of-bounds reads. Set to row 0 in this case.
+		*/
+		if (song.row >= song.currNumRows)
+			song.row = 0;
 	}
 }
 
@@ -2228,7 +2237,6 @@ void resumeMusic(void) // starts reading pattern data
 {
 	musicPaused = false;
 }
-
 
 void tickReplayer(void) // periodically called from audio callback
 {
@@ -3127,11 +3135,20 @@ void resetReplayerState(void)
 	song.pBreakPos = 0;
 	song.pBreakFlag = false;
 
+	// reset pattern loops (E6x)
+	channel_t *ch = channel;
+	for (int32_t i = 0; i < song.numChannels; i++, ch++)
+	{
+		ch->jumpToRow = 0;
+		ch->patLoopCounter = 0;
+	}
+	
+	// reset global volume (if song was playing)
 	if (songPlaying)
 	{
 		song.globalVolume = 64;
 
-		channel_t *ch = channel;
+		ch = channel;
 		for (int32_t i = 0; i < song.numChannels; i++, ch++)
 			ch->status |= IS_Vol;
 	}

@@ -5,6 +5,7 @@
 #include "ft2_header.h"
 #include "ft2_palette.h"
 #include "ft2_audio.h"
+#include "ft2_hpc.h"
 
 enum
 {
@@ -20,17 +21,17 @@ typedef struct video_t
 {
 	bool fullscreen, showFPSCounter, useDesktopMouseCoords;
 	uint32_t xScale, yScale;
-	uint32_t *frameBuffer, palette[PAL_NUM], vblankTimeLen, vblankTimeLenFrac;
+	uint32_t *frameBuffer, palette[PAL_NUM];
 #ifdef _WIN32
 	HWND hWnd;
 #endif
+	hpc_t vblankHpc;
 	SDL_Window *window;
 	double dMonitorRefreshRate;
 	float fMouseXMul, fMouseYMul;
 	uint8_t upscaleFactor;
 	bool vsync60HzPresent, windowHidden;
-	int32_t renderX, renderY, renderW, renderH, displayW, displayH;
-	uint32_t *frameBufferUnaligned;
+	int32_t renderX, renderY, renderW, renderH, displayW, displayH, windowW, windowH;
 	SDL_Renderer *renderer;
 	SDL_Texture *texture;
 	SDL_Surface *iconSurface;
@@ -70,9 +71,7 @@ void changeSpriteData(int32_t sprite, const uint8_t *data);
 void hideSprite(int32_t sprite);
 void handleRedrawing(void);
 void enterFullscreen(void);
-void leaveFullScreen(void);
+void leaveFullscreen(void);
 void setWindowSizeFromConfig(bool updateRenderer);
 bool recreateTexture(void);
-void toggleFullScreen(void);
-void setupWaitVBL(void);
-void waitVBL(void);
+void toggleFullscreen(void);

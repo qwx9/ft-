@@ -12,11 +12,11 @@
 #endif
 #include "ft2_replayer.h"
 
-#define PROG_VER_STR "1.51"
+#define PROG_VER_STR "1.63"
 
 // do NOT change these! It will only mess things up...
 
-#define FT2_VBLANK_HZ 70
+#define FT2_VBLANK_HZ 70.086302895323 /* nominal, 640x400 @ 70Hz */
 #define SCREEN_W 632
 #define SCREEN_H 400
 
@@ -37,8 +37,8 @@
 ** branchless in the inner channel mixer loop.
 ** Warning: Do not change this!
 */
-#define SMP_DAT_OFFSET 32
-#define SAMPLE_PAD_LENGTH (SMP_DAT_OFFSET+32)
+#define SMP_DAT_OFFSET ((SINC_LEFT_TAPS*2)+1)
+#define SAMPLE_PAD_LENGTH (SMP_DAT_OFFSET+(SINC_RIGHT_TAPS*2))
 
 #ifndef _WIN32
 #define _stricmp strcasecmp
@@ -68,9 +68,6 @@
 
 // fast 32-bit -> 16-bit clamp
 #define CLAMP16(i) if ((int16_t)(i) != i) i = 0x7FFF ^ (i >> 31)
-
-#define ALIGN_PTR(p, x) (((uintptr_t)(p) + ((x)-1)) & ~((x)-1))
-#define MALLOC_PAD(size, pad) (malloc((size) + (pad)))
 
 #define SWAP16(x) \
 ( \

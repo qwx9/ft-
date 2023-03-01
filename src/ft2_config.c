@@ -210,12 +210,40 @@ static void setDefaultConfigSettings(void)
 	loadConfigFromBuffer(true);
 }
 
+static void updateImageStretchAndPixelFilter(uint8_t oldWindowFlags, uint8_t oldSpecialFlags2)
+{
+	bool didFullscreenUpdate = false;
+
+	// handle pixel filter change
+	if ((oldWindowFlags & PIXEL_FILTER) != (config.windowFlags & PIXEL_FILTER))
+	{
+		recreateTexture();
+		if (video.fullscreen) // force an update if in fullscreen mode
+		{
+			leaveFullscreen();
+			enterFullscreen();
+			didFullscreenUpdate = true;
+		}
+	}
+
+	// handle image stretch change
+	if ((oldSpecialFlags2 & STRETCH_IMAGE) != (config.specialFlags2 & STRETCH_IMAGE))
+	{
+		if (video.fullscreen && !didFullscreenUpdate) // force an update if in fullscreen mode
+		{
+			leaveFullscreen();
+			enterFullscreen();
+		}
+	}
+}
+
 void resetConfig(void)
 {
 	if (okBox(2, "System request", "Are you sure you want to reset your FT2 configuration?") != 1)
 		return;
 
 	const uint8_t oldWindowFlags = config.windowFlags;
+	const uint8_t oldSpecialFlags2 = config.specialFlags2;
 
 	setDefaultConfigSettings();
 	setToDefaultAudioOutputDevice();
@@ -228,17 +256,7 @@ void resetConfig(void)
 	showBottomScreen();
 
 	setWindowSizeFromConfig(true);
-
-	// handle pixel filter change
-	if ((oldWindowFlags & PIXEL_FILTER) != (config.windowFlags & PIXEL_FILTER))
-	{
-		recreateTexture();
-		if (video.fullscreen)
-		{
-			leaveFullScreen();
-			enterFullscreen();
-		}
-	}
+	updateImageStretchAndPixelFilter(oldWindowFlags, oldSpecialFlags2);
 
 	if (config.specialFlags2 & HARDWARE_MOUSE)
 		SDL_ShowCursor(SDL_TRUE);
@@ -339,6 +357,7 @@ bool loadConfig(bool showErrorFlag)
 void loadConfig2(void) // called by "Load config" button
 {
 	const uint8_t oldWindowFlags = config.windowFlags;
+	const uint8_t oldSpecialFlags2 = config.specialFlags2;
 
 	loadConfig(CONFIG_SHOW_ERRORS);
 
@@ -346,16 +365,8 @@ void loadConfig2(void) // called by "Load config" button
 	showTopScreen(false);
 	showBottomScreen();
 
-	// handle pixel filter change
-	if ((oldWindowFlags & PIXEL_FILTER) != (config.windowFlags & PIXEL_FILTER))
-	{
-		recreateTexture();
-		if (video.fullscreen)
-		{
-			leaveFullScreen();
-			enterFullscreen();
-		}
-	}
+	setWindowSizeFromConfig(true);
+	updateImageStretchAndPixelFilter(oldWindowFlags, oldSpecialFlags2);
 
 	if (config.specialFlags2 & HARDWARE_MOUSE)
 		SDL_ShowCursor(SDL_TRUE);
@@ -872,6 +883,7 @@ static void setConfigLayoutCheckButtonStates(void)
 	checkBoxes[CB_CONF_LINECOLORS].checked = config.ptnLineLight;
 	checkBoxes[CB_CONF_CHANNUMS].checked = config.ptnChnNumbers;
 	checkBoxes[CB_CONF_SHOW_VOLCOL].checked = config.ptnShowVolColumn;
+	checkBoxes[CB_CONF_ENABLE_CUSTOM_POINTER].checked = (config.specialFlags2 & USE_OS_MOUSE_POINTER) ? false : true;
 	checkBoxes[CB_CONF_SOFTWARE_MOUSE].checked = (config.specialFlags2 & HARDWARE_MOUSE) ? false : true;
 
 	showCheckBox(CB_CONF_PATTSTRETCH);
@@ -882,6 +894,7 @@ static void setConfigLayoutCheckButtonStates(void)
 	showCheckBox(CB_CONF_LINECOLORS);
 	showCheckBox(CB_CONF_CHANNUMS);
 	showCheckBox(CB_CONF_SHOW_VOLCOL);
+	showCheckBox(CB_CONF_ENABLE_CUSTOM_POINTER);
 	showCheckBox(CB_CONF_SOFTWARE_MOUSE);
 }
 
@@ -1429,6 +1442,7 @@ void hideConfigScreen(void)
 	hideCheckBox(CB_CONF_LINECOLORS);
 	hideCheckBox(CB_CONF_CHANNUMS);
 	hideCheckBox(CB_CONF_SHOW_VOLCOL);
+	hideCheckBox(CB_CONF_ENABLE_CUSTOM_POINTER);
 	hideCheckBox(CB_CONF_SOFTWARE_MOUSE);
 	hidePushButton(PB_CONFIG_PAL_R_DOWN);
 	hidePushButton(PB_CONFIG_PAL_R_UP);
@@ -1737,6 +1751,29 @@ void cbConfigShowVolCol(void)
 	redrawPatternEditor();
 }
 
+void cbEnableCustomPointer(void)
+{
+	config.specialFlags2 ^= USE_OS_MOUSE_POINTER;
+
+	if (config.specialFlags2 & USE_OS_MOUSE_POINTER)
+	{
+		checkBoxes[CB_CONF_ENABLE_CUSTOM_POINTER].checked = false;
+		drawCheckBox(CB_CONF_ENABLE_CUSTOM_POINTER);
+	}
+	else
+	{
+		checkBoxes[CB_CONF_ENABLE_CUSTOM_POINTER].checked = true;
+		drawCheckBox(CB_CONF_ENABLE_CUSTOM_POINTER);
+	}
+
+	if (config.specialFlags2 & HARDWARE_MOUSE)
+		SDL_ShowCursor(SDL_TRUE);
+	else
+		SDL_ShowCursor(SDL_FALSE);
+
+	createMouseCursors();
+}
+
 void cbSoftwareMouse(void)
 {
 	config.specialFlags2 ^= HARDWARE_MOUSE;
@@ -1747,14 +1784,17 @@ void cbSoftwareMouse(void)
 	{
 		checkBoxes[CB_CONF_SOFTWARE_MOUSE].checked = false;
 		drawCheckBox(CB_CONF_SOFTWARE_MOUSE);
-		SDL_ShowCursor(SDL_TRUE);
 	}
 	else
 	{
 		checkBoxes[CB_CONF_SOFTWARE_MOUSE].checked = true;
 		drawCheckBox(CB_CONF_SOFTWARE_MOUSE);
-		SDL_ShowCursor(SDL_FALSE);
 	}
+
+	if (config.specialFlags2 & HARDWARE_MOUSE)
+		SDL_ShowCursor(SDL_TRUE);
+	else
+		SDL_ShowCursor(SDL_FALSE);
 }
 
 void rbConfigMouseNice(void)
@@ -2081,7 +2121,7 @@ void cbPixelFilter(void)
 	recreateTexture();
 	if (video.fullscreen)
 	{
-		leaveFullScreen();
+		leaveFullscreen();
 		enterFullscreen();
 	}
 }
@@ -2092,7 +2132,7 @@ void cbStretchImage(void)
 
 	if (video.fullscreen)
 	{
-		leaveFullScreen();
+		leaveFullscreen();
 		enterFullscreen();
 	}
 }

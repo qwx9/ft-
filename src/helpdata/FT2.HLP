@@ -782,6 +782,15 @@ changed with respect to the resampling rate.
 By pressing the right mouse button in the sample window, you can
 draw your waveforms manually.
 
+@X020@C001WAV export:
+>
+>@X040@C001Imprecise BPM (FT2):
+>@X060@C002
+The BPM precision in original FT2 is not exact. Tick this box to use
+the same (poor) BPM precision that original FT2 uses. It will be
+a fraction off, but the WAV output will be the same length as from FT2.
+This settings only affects WAV export, and not tracker playback.
+
 @X020@C001Configuration:
 >
 >@X040@C001Auto save:
@@ -922,11 +931,6 @@ END
 ;***************************************************************************
 @LKnown bugs
 >
->@X010@C001Sample recording on Mac:
->
->@X010@C002- Sample recording doesn't work on macOS Mojave and later, because of an
->@X021issue in SDL2 where it doesn't ask for permission to use the audio input device.
->
 >@X010@C001WAV exporting (rendering song to WAV):
 >
 >@X010@C002- Songs that jump back to a previous pattern will render forever and ever,
@@ -936,7 +940,7 @@ END
 >@X010@C001Video:
 >@C002
 >@X010- Fullscreen mode can be unbearably slow on a Raspberry Pi (even on RPi 4)
->@X010- Not a bug, but if your monitor's refresh rate is not set to 60Hz (or 59Hz)
->@X021you may experience visual stuttering because VSync will not be used.
+>@X010- Fullscreen mode can have several problems on multi-monitor systems
+>@X010- Fullscreen mode can have several problems on some Linux systems
 
 END
