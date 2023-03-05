@@ -30,7 +30,8 @@
 
 static int8_t pmpCountDiv, pmpChannels = 2;
 static uint16_t smpBuffSize;
-static uint32_t oldAudioFreq, tickTimeLen, tickTimeLenFrac, randSeed = INITIAL_DITHER_SEED;
+static uint32_t oldAudioFreq, tickTimeLenInt, randSeed = INITIAL_DITHER_SEED;
+static uint64_t tickTimeLenFrac;
 static float fAudioNormalizeMul, fPanningTab[256+1];
 static double dAudioNormalizeMul, dPrngStateL, dPrngStateR;
 static voice_t voice[MAX_CHANNELS * 2];
@@ -182,15 +183,12 @@ void setMixerBPM(int32_t bpm)
 
 	int32_t i = bpm - MIN_BPM;
 
-	audio.samplesPerTick64 = audio.samplesPerTick64Tab[i]; // fixed-point
-	audio.samplesPerTick = (audio.samplesPerTick64 + (1LL << 31)) >> 32; // rounded
+	audio.samplesPerTickInt = audio.samplesPerTickIntTab[i];
+	audio.samplesPerTickFrac = audio.samplesPerTickFracTab[i];
 
 	// for audio/video sync timestamp
-	tickTimeLen = audio.tickTimeTab[i];
+	tickTimeLenInt = audio.tickTimeIntTab[i];
 	tickTimeLenFrac = audio.tickTimeFracTab[i];
-
-	// for calculating volume ramp length for tick-length ramps
-	audio.fRampTickMul = audio.fRampTickMulTab[i];
 }
 
 void audioSetVolRamp(bool volRamp)
@@ -244,13 +242,12 @@ static void voiceUpdateVolumes(int32_t i, uint8_t status)
 
 			*f = *v; // copy voice
 
-			f->volumeRampLength = audio.quickVolRampSamples;
-
 			const float fVolumeLTarget = -f->fVolumeL;
 			const float fVolumeRTarget = -f->fVolumeR;
 
-			f->fVolumeLDelta = fVolumeLTarget * audio.fRampQuickVolMul;
-			f->fVolumeRDelta = fVolumeRTarget * audio.fRampQuickVolMul;
+			f->volumeRampLength = audio.quickVolRampSamples;
+			f->fVolumeLDelta = fVolumeLTarget / (int32_t)f->volumeRampLength;
+			f->fVolumeRDelta = fVolumeRTarget / (int32_t)f->volumeRampLength;
 
 			f->isFadeOutVoice = true;
 		}
@@ -279,16 +276,15 @@ static void voiceUpdateVolumes(int32_t i, uint8_t status)
 
 		if (status & IS_QuickVol)
 		{
-			v->fVolumeLDelta = fVolumeLTarget * audio.fRampQuickVolMul;
-			v->fVolumeRDelta = fVolumeRTarget * audio.fRampQuickVolMul;
 			v->volumeRampLength = audio.quickVolRampSamples;
-
+			v->fVolumeLDelta = fVolumeLTarget / (int32_t)v->volumeRampLength;
+			v->fVolumeRDelta = fVolumeRTarget / (int32_t)v->volumeRampLength;
 		}
 		else
 		{
-			v->fVolumeLDelta = fVolumeLTarget * audio.fRampTickMul;
-			v->fVolumeRDelta = fVolumeRTarget * audio.fRampTickMul;
-			v->volumeRampLength = audio.samplesPerTick;
+			v->volumeRampLength = audio.samplesPerTickInt;
+			v->fVolumeLDelta = fVolumeLTarget / (int32_t)v->volumeRampLength;
+			v->fVolumeRDelta = fVolumeRTarget / (int32_t)v->volumeRampLength;
 		}
 	}
 }
@@ -599,7 +595,6 @@ static void doChannelMixing(int32_t bufferPosition, int32_t samplesToMix)
 // used for song-to-WAV renderer
 void mixReplayerTickToBuffer(uint32_t samplesToMix, uint8_t *stream, uint8_t bitDepth)
 {
-	assert(samplesToMix <= MAX_WAV_RENDER_SAMPLES_PER_TICK);
 	doChannelMixing(0, samplesToMix);
 
 	// normalize mix buffer and send to audio stream
@@ -920,11 +915,12 @@ static void fillVisualsSyncBuffer(void)
 	chSyncData.timestamp = audio.tickTime64;
 	chQueuePush(chSyncData);
 
-	audio.tickTime64 += tickTimeLen;
+	audio.tickTime64 += tickTimeLenInt;
+
 	audio.tickTime64Frac += tickTimeLenFrac;
-	if (audio.tickTime64Frac > UINT32_MAX)
+	if (audio.tickTime64Frac >= TICK_TIME_FRAC_SCALE)
 	{
-		audio.tickTime64Frac &= UINT32_MAX;
+		audio.tickTime64Frac &= TICK_TIME_FRAC_MASK;
 		audio.tickTime64++;
 	}
 }
@@ -938,14 +934,12 @@ static void SDLCALL audioCallback(void *userdata, Uint8 *stream, int len)
 	if (len <= 0)
 		return;
 
-	assert(len <= MAX_WAV_RENDER_SAMPLES_PER_TICK);
-
 	int32_t bufferPosition = 0;
 
-	int32_t samplesLeft = len;
+	uint32_t samplesLeft = len;
 	while (samplesLeft > 0)
 	{
-		if (audio.tickSampleCounter64 <= 0) // new replayer tick
+		if (audio.tickSampleCounter == 0) // new replayer tick
 		{
 			replayerBusy = true;
 
@@ -956,22 +950,27 @@ static void SDLCALL audioCallback(void *userdata, Uint8 *stream, int len)
 			updateVoices();
 			fillVisualsSyncBuffer();
 
-			audio.tickSampleCounter64 += audio.samplesPerTick64;
+			audio.tickSampleCounter = audio.samplesPerTickInt;
+
+			audio.tickSampleCounterFrac += audio.samplesPerTickFrac;
+			if (audio.tickSampleCounterFrac >= BPM_FRAC_SCALE)
+			{
+				audio.tickSampleCounterFrac &= BPM_FRAC_MASK;
+				audio.tickSampleCounter++;
+			}
 
 			replayerBusy = false;
 		}
 
-		const int32_t remainingTick = (audio.tickSampleCounter64 + UINT32_MAX) >> 32; // ceil (rounded upwards)
-
-		int32_t samplesToMix = samplesLeft;
-		if (samplesToMix > remainingTick)
-			samplesToMix = remainingTick;
+		uint32_t samplesToMix = samplesLeft;
+		if (samplesToMix > audio.tickSampleCounter)
+			samplesToMix = audio.tickSampleCounter;
 
 		doChannelMixing(bufferPosition, samplesToMix);
-
 		bufferPosition += samplesToMix;
+		
+		audio.tickSampleCounter -= samplesToMix;
 		samplesLeft -= samplesToMix;
-		audio.tickSampleCounter64 -= (int64_t)samplesToMix << 32;
 	}
 
 	// normalize mix buffer and send to audio stream
@@ -982,8 +981,11 @@ static void SDLCALL audioCallback(void *userdata, Uint8 *stream, int len)
 
 static bool setupAudioBuffers(void)
 {
-	audio.fMixBufferL = (float *)calloc(MAX_WAV_RENDER_SAMPLES_PER_TICK, sizeof (float));
-	audio.fMixBufferR = (float *)calloc(MAX_WAV_RENDER_SAMPLES_PER_TICK, sizeof (float));
+	const int32_t maxAudioFreq = MAX(MAX_AUDIO_FREQ, MAX_WAV_RENDER_FREQ);
+	int32_t maxSamplesPerTick = (int32_t)ceil(maxAudioFreq / (MIN_BPM / 2.5)) + 1;
+
+	audio.fMixBufferL = (float *)calloc(maxSamplesPerTick, sizeof (float));
+	audio.fMixBufferR = (float *)calloc(maxSamplesPerTick, sizeof (float));
 
 	if (audio.fMixBufferL == NULL || audio.fMixBufferR == NULL)
 		return false;
@@ -1041,12 +1043,8 @@ static void calcAudioLatencyVars(int32_t audioBufferSize, int32_t audioFreq)
 
 	double dFrac = modf(dAudioLatencySecs * editor.dPerfFreq, &dInt);
 
-	// integer part
-	audio.audLatencyPerfValInt = (int32_t)dInt;
-
-	// fractional part (scaled to 0..2^32-1)
-	dFrac *= UINT32_MAX+1.0;
-	audio.audLatencyPerfValFrac = (uint32_t)dFrac;
+	audio.audLatencyPerfValInt = (uint32_t)dInt;
+	audio.audLatencyPerfValFrac = (uint64_t)((dFrac * TICK_TIME_FRAC_SCALE) + 0.5); // rounded
 
 	audio.dAudioLatencyMs = dAudioLatencySecs * 1000.0;
 }
@@ -1186,7 +1184,8 @@ bool setupAudio(bool showErrorMsg)
 
 	stopAllScopes();
 
-	audio.tickSampleCounter64 = 0; // zero tick sample counter so that it will instantly initiate a tick
+	audio.tickSampleCounter = 0; // zero tick sample counter so that it will instantly initiate a tick
+	audio.tickSampleCounterFrac = 0;
 
 	calcReplayerVars(audio.freq);
 
