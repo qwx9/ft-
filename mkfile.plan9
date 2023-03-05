@@ -2,7 +2,7 @@
 
 BIN=/$objtype/bin/audio
 TARG=ft2
-CFLAGS=$CFLAGS -p -Isrc -I/sys/include/npe -D__plan9__
+CFLAGS=$CFLAGS -p -Isrc -Isrc/rtmidi -I/sys/include/npe -D__plan9__ -DHAS_MIDI
 
 HFILES=\
 	src/ft2_about.h\
@@ -124,6 +124,7 @@ OFILES=\
 	src/smploaders/ft2_load_iff.$O\
 	src/smploaders/ft2_load_raw.$O\
 	src/smploaders/ft2_load_wav.$O\
+	midi.$O\
 
 default:V: all
 
