@@ -1,19 +1,6 @@
 #!/bin/rc
 rfork ne
 
-fn pragma_once {
-	h=_^`"{echo $1 | sed 's,.*/,,g;s/\..*//g' | tr -d '
-'}^_h_
-	sed 's/#pragma once/#ifndef '^$h^'\n#define '^$h^'/g' $1 && echo && echo '#endif'
-}
-
-for(f in src/*.h src/*/*.h){
-	grep -s '^#pragma[ 	]+once' $f && {
-		pragma_once $f >$f.p
-		mv $f.p $f
-	}
-}
-
 fn pragma_pack {
 	sed 's/#pragma[ 	]+pack[ 	(]*(push|1)[ 	)]*/#pragma pack on/g
 s/#pragma[ 	]+pack[ 	(]*(pop|0)[ 	)]*/#pragma pack off/g
