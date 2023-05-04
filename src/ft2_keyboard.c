@@ -353,7 +353,7 @@ static void handleKeys(SDL_Keycode keycode, SDL_Scancode scanKey)
 				config.masterVol = 256;
 
 			setAudioAmp(config.boostLevel, config.masterVol, !!(config.specialFlags & BITDEPTH_32));
-			if (ui.configScreenShown && editor.currConfigScreen == CONFIG_SCREEN_IO_DEVICES)
+			if (ui.configScreenShown && editor.currConfigScreen == CONFIG_SCREEN_AUDIO)
 				showConfigScreen();
 			break;
 		case SDL_SCANCODE_VOLUMEDOWN:
@@ -363,7 +363,7 @@ static void handleKeys(SDL_Keycode keycode, SDL_Scancode scanKey)
 				config.masterVol = 0;
 
 			setAudioAmp(config.boostLevel, config.masterVol, !!(config.specialFlags & BITDEPTH_32));
-			if (ui.configScreenShown && editor.currConfigScreen == CONFIG_SCREEN_IO_DEVICES)
+			if (ui.configScreenShown && editor.currConfigScreen == CONFIG_SCREEN_AUDIO)
 				showConfigScreen();
 			break;
 
