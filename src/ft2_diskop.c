@@ -1568,21 +1568,22 @@ static char *ach(int32_t rad) // used for sortDirectory()
 {
 	DirRec *dirEntry = &FReq_Buffer[rad];
 
-	char *name = unicharToCp437(dirEntry->nameU, true);
-	if (name == NULL)
-		return NULL;
+	//char *name = unicharToCp437(dirEntry->nameU, true);
+	//if (name == NULL)
+	//	return NULL;
+	char *name = dirEntry->nameU;
 
 	const int32_t nameLen = (int32_t)strlen(name);
 	if (nameLen == 0)
 	{
-		free(name);
+		//free(name);
 		return NULL;
 	}
 
 	char *p = (char *)malloc(nameLen+1+1);
 	if (p == NULL)
 	{
-		free(name);
+		//free(name);
 		return NULL;
 	}
 
@@ -1597,7 +1598,7 @@ static char *ach(int32_t rad) // used for sortDirectory()
 
 		strcpy(&p[1], name);
 
-		free(name);
+		//free(name);
 		return p;
 	}
 	else
@@ -1609,7 +1610,7 @@ static char *ach(int32_t rad) // used for sortDirectory()
 		{
 			// sort by filename
 			strcpy(p, name);
-			free(name);
+			//free(name);
 			return p;
 		}
 		else
@@ -1619,7 +1620,7 @@ static char *ach(int32_t rad) // used for sortDirectory()
 			if (extLen <= 1)
 			{
 				strcpy(p, name);
-				free(name);
+				//free(name);
 				return p;
 			}
 
@@ -1628,10 +1629,25 @@ static char *ach(int32_t rad) // used for sortDirectory()
 			memcpy(&p[extLen-1], name, i);
 			p[nameLen-1] = '\0';
 
-			free(name);
+			//free(name);
 			return p;
 		}
 	}
+}
+
+static int dcmp(void *a, void *b)
+{
+	DirRec *d, *e;
+	char *n, *m;
+
+	// FIXME: reimplement dcmp with the stuff the rest does
+	d = a;
+	e = b;
+	//n = d->nameU;//unicharToCp437(d->nameU, true);
+	//m = e->nameU;//unicharToCp437(e->nameU, true);
+	n = ach(d - FReq_Buffer);
+	m = ach(e - FReq_Buffer);
+	return _stricmp(n, m);
 }
 
 static void sortDirectory(void)
@@ -1640,6 +1656,8 @@ static void sortDirectory(void)
 
 	if (FReq_FileCount < 2)
 		return; // no need to sort
+	qsort(FReq_Buffer, FReq_FileCount, sizeof *FReq_Buffer, dcmp);
+	return;
 
 	uint32_t offset = FReq_FileCount >> 1;
 	while (offset > 0)

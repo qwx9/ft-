@@ -194,8 +194,11 @@ bool openMidiInDevice(uint32_t deviceID)
 	if (midiDev == NULL)
 		return false;
 
-	if (getNumMidiInDevices() == 0)
+	const uint32_t numDevices = getNumMidiInDevices();
+	if (numDevices == 0 || numDevices != midi.numInputDevices){
+		midi.rescanDevicesFlag = true;
 		return false;
+	}
 
 	rtmidi_open_port(midiDev, deviceID, "FT2 Clone MIDI Port");
 	if (!midiDev->ok)
@@ -285,7 +288,10 @@ bool setMidiInputDeviceFromConfig(void)
 	uint32_t i;
 
 	if (midi.inputDeviceName != NULL)
+	{
 		free(midi.inputDeviceName);
+		midi.inputDeviceName = NULL;
+	}
 
 	const uint32_t numDevices = getNumMidiInDevices();
 	if (numDevices == 0)
@@ -477,7 +483,12 @@ bool testMidiInputDeviceListMouseDown(void)
 	closeMidiInDevice();
 	freeMidiIn();
 	initMidiIn();
-	openMidiInDevice(midi.inputDevice);
+	if(!openMidiInDevice(midi.inputDevice)){
+		free(midi.inputDeviceName);
+		midi.inputDeviceName = NULL;
+		midi.inputDevice = -1;
+		return false;
+	}
 
 	drawMidiInputList();
 	return true;
