@@ -13,84 +13,25 @@
 
 static struct RtMidiWrapper notrt;
 static RtMidiCCallback callback;
-static int mpid = -1;
-static char *epfile, *eptab[MAX_MIDI_DEVICES];
-static int disable[MAX_MIDI_DEVICES];
-static int neps;
-
-static int
-scaneps(void)
-{
-	int fd, i, n, m;
-	char *s, **t, **e, buf[512], *fl[32];
-	Dir *d;
-
-	e = eptab + nelem(eptab);
-	for(t=eptab; t<e; t++){
-		free(*t);
-		*t = nil;
-	}
-	neps = 0;
-	t = eptab;
-	/* special case for plugging in any non endpoint file */
-	if((s = getenv("midikbd")) != nil){
-		*t++ = s;
-		neps++;
-	}
-	if((fd = open("/dev/usb", OREAD)) < 0){
-		fprint(2, "scaneps: %r\n");
-		return neps;
-	}
-	n = dirreadall(fd, &d);
-	close(fd);
-	if(n < 0){
-		fprint(2, "scaneps: %r\n");
-		return neps;
-	}
-	for(i=0; i<n; i++){
-		snprint(buf, sizeof buf, "/dev/usb/%s/ctl", d[i].name);
-		if(epfile != nil && (s = strrchr(epfile, '/')) != nil){
-			if(strncmp(buf, epfile, s - epfile) == 0)
-				goto gotit;
-		}
-		if((fd = open(buf, OREAD)) < 0)
-			continue;
-		if((m = pread(fd, buf, sizeof buf, 0)) <= 0)
-			continue;
-		close(fd);
-		buf[m-1] = 0;
-		if(getfields(buf, fl, nelem(fl), 0, " ") < 26)
-			continue;
-		if(strcmp(fl[0], "enabled") != 0
-		|| strcmp(fl[2], "r") != 0 && strcmp(fl[2], "rw") != 0
-		|| strcmp(fl[25], "idle") != 0)
-			continue;
-	gotit:
-		if((*t++ = smprint("/dev/usb/%s/data", d[i].name)) == nil)
-			sysfatal("smprint: %r\n");
-		neps++;
-		if(t >= e)
-			break;
-	}
-	free(d);
-	return neps;
-}
+static int mpfd = -1;
 
 unsigned int
 rtmidi_get_port_count(RtMidiPtr)
 {
+	if(access("/srv/midi", AREAD) < 0){
+		notrt.ok = false;
+		return 0;
+	}
 	notrt.ok = true;
-	return scaneps();
+	return 1;
 }
 
 char *
-rtmidi_get_port_name(RtMidiPtr, unsigned int i)
+rtmidi_get_port_name(RtMidiPtr, unsigned int)
 {
 	char *s;
 
-	if(i >= neps)
-		return NULL;
-	if((s = strdup(eptab[i])) == nil)
+	if((s = strdup("/srv/midi")) == nil)
 		sysfatal("strdup: %r");
 	return s;
 }
@@ -102,11 +43,10 @@ rtmidi_in_cancel_callback(RtMidiInPtr)
 
 void rtmidi_close_port(RtMidiPtr)
 {
-	threadkill(mpid);
-	mpid = -1;
+	close(mpfd);
+	mpfd = -1;
 	callback = nil;
 	notrt.ok = false;
-	epfile = nil;
 }
 
 void rtmidi_in_free(RtMidiInPtr)
@@ -126,11 +66,7 @@ midiproc(void *)
 	int fd, n, k;
 	uchar buf[1024];
 
-	if((fd = open(epfile, OREAD)) < 0){
-		fprint(2, "midiproc: could not open stream: %r; exiting");
-		goto end;
-	}
-	while((n = read(fd, buf, sizeof buf)) > 0){
+	while((n = read(mpfd, buf, sizeof buf)) > 0){
 		if(n & 3)
 			fprint(2, "midiproc: malformed message size %d\n", n);
 		for(k=0; k<n; k+=4)
@@ -140,21 +76,18 @@ midiproc(void *)
 				fprint(2, "midiproc: discarding message\n");
 	}
 	fprint(2, "midiproc is off this merry-go-round: %r\n");
-end:
-	epfile = nil;
-	notrt.ok = false;
-	mpid = -1;
+	mpfd = -1;
 }
 
 void
-rtmidi_open_port(RtMidiPtr, unsigned int i, char *)
+rtmidi_open_port(RtMidiPtr, unsigned int, char *)
 {
-	assert(mpid < 0);
-	if(i >= neps)
-		return;
 	notrt.ok = true;
-	epfile = eptab[i];
-	if((mpid = proccreate(midiproc, nil, mainstacksize)) < 0)
+	if((mpfd = open("/srv/midi", OREAD)) < 0){
+		notrt.ok = false;
+		return;
+	}
+	if(procrfork(midiproc, nil, mainstacksize, RFFDG) < 0)
 		sysfatal("proccreate: %r");
 }
 
