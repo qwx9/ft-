@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_help_h_
+#define _ft2_help_h_
 
 #include <stdint.h>
 
@@ -20,3 +21,5 @@ void rbHelpKeybindings(void);
 void rbHelpHowToUseFT2(void);
 void rbHelpFAQ(void);
 void rbHelpKnownBugs(void);
+
+#endif

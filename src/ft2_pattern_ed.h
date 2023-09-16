@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_pattern_ed_h_
+#define _ft2_pattern_ed_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -172,3 +173,5 @@ void pbZap(void);
 void sbSmpBankPos(uint32_t pos);
 void pbToggleLogo(void);
 void pbToggleBadge(void);
+
+#endif

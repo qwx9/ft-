@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_scrollbars_h_
+#define _ft2_scrollbars_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -93,3 +94,5 @@ bool testScrollBarMouseDown(void);
 void testScrollBarMouseRelease(void);
 void handleScrollBarsWhileMouseDown(void);
 void initializeScrollBars(void);
+
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_textboxes_h_
+#define _ft2_textboxes_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -76,3 +77,5 @@ void handleTextEditControl(SDL_Keycode keycode);
 void handleTextEditInputChar(char textChar);
 void handleTextBoxWhileMouseDown(void);
 void freeTextBoxes(void);
+
+#endif

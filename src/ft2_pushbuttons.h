@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_pushbuttons_h_
+#define _ft2_pushbuttons_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -374,3 +375,5 @@ void hidePushButton(uint16_t pushButtonID);
 void handlePushButtonsWhileMouseDown(void);
 bool testPushButtonMouseDown(void);
 int16_t testPushButtonMouseRelease(bool runCallback);
+
+#endif

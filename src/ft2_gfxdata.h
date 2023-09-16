@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_gfxdata_h_
+#define _ft2_gfxdata_h_
 
 #include <stdint.h>
 
@@ -43,3 +44,5 @@ extern const uint8_t midiLogoBMP[1544];
 // ft2_bmp_gui.c
 extern const uint8_t checkboxGfxBMP[776];
 extern const uint8_t radiobuttonGfxBMP[404];
+
+#endif

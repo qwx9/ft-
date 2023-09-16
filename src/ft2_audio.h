@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_audio_h_
+#define _ft2_audio_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -82,9 +83,9 @@ typedef struct
 	float fCurrVolumeL, fCurrVolumeR, fVolumeLDelta, fVolumeRDelta, fTargetVolumeL, fTargetVolumeR;
 } voice_t;
 
-#ifdef _MSC_VER
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct pattSyncData_t // used for audio/video sync queue (pack to save RAM)
 {
@@ -95,8 +96,8 @@ typedef struct pattSyncData_t // used for audio/video sync queue (pack to save R
 __attribute__ ((packed))
 #endif
 pattSyncData_t;
-#ifdef _MSC_VER
-#pragma pack(pop)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack off
 #endif
 
 typedef struct pattSync_t
@@ -166,3 +167,5 @@ extern chSync_t chSync;
 extern pattSync_t pattSync;
 
 extern volatile bool pattQueueClearing, chQueueClearing;
+
+#endif

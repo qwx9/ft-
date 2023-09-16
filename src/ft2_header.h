@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_header_h_
+#define _ft2_header_h_
 
 #include <SDL2/SDL.h>
 #include <stdint.h>
@@ -12,7 +13,7 @@
 #endif
 #include "ft2_replayer.h"
 
-#define PROG_VER_STR "1.67"
+#define PROG_VER_STR "1.69"
 
 // do NOT change these! It will only mess things up...
 
@@ -99,3 +100,5 @@ typedef struct smpPtr_t
 {
 	int8_t *origPtr, *ptr;
 } smpPtr_t;
+
+#endif

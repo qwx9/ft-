@@ -13,9 +13,9 @@
 #include "../ft2_tables.h"
 #include "../ft2_sysreqs.h"
 
-#ifdef _MSC_VER  // please don't mess with this struct!
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__)  // please don't mess with this struct!
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct stkHdr_t
 {
@@ -27,8 +27,8 @@ typedef struct stkHdr_t
 __attribute__ ((packed))
 #endif
 stkHdr_t;
-#ifdef _MSC_VER
-#pragma pack(pop)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack off
 #endif
 
 bool loadSTK(FILE *f, uint32_t filesize)
