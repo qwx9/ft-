@@ -212,7 +212,7 @@ static int32_t SDLCALL copyInstrThread(void *ptr)
 	resumeAudio();
 
 	if (error)
-		okBoxThreadSafe(0, "System message", "Not enough memory!");
+		okBoxThreadSafe(0, "System message", "Not enough memory!", NULL);
 
 	// do not change instrument names!
 
@@ -237,7 +237,7 @@ void copyInstr(void) // dstInstr = srcInstr
 	thread = SDL_CreateThread(copyInstrThread, NULL, NULL);
 	if (thread == NULL)
 	{
-		okBox(0, "System message", "Couldn't create thread!");
+		okBox(0, "System message", "Couldn't create thread!", NULL);
 		return;
 	}
 
@@ -2001,7 +2001,7 @@ static void writeEnvelope(int32_t envNum)
 
 static void drawVolEnvCoords(int16_t tick, int16_t val)
 {
-	char str[4];
+	char str[8];
 
 	tick = CLAMP(tick, 0, 324);
 	sprintf(str, "%03d", tick);
@@ -2014,12 +2014,13 @@ static void drawVolEnvCoords(int16_t tick, int16_t val)
 
 static void drawPanEnvCoords(int16_t tick, int16_t val)
 {
-	bool negative = false;
-	char str[4];
+	char str[8];
 
 	tick = CLAMP(tick, 0, 324);
 	sprintf(str, "%03d", tick);
 	textOutTinyOutline(326, 277, str);
+	
+	bool negative = false;
 	
 	val -= 32;
 	val = CLAMP(val, -32, 31);
@@ -2914,21 +2915,21 @@ static int32_t SDLCALL saveInstrThread(void *ptr)
 
 	if (editor.tmpFilenameU == NULL)
 	{
-		okBoxThreadSafe(0, "System message", "General I/O error during saving! Is the file in use?");
+		okBoxThreadSafe(0, "System message", "General I/O error during saving! Is the file in use?", NULL);
 		return false;
 	}
 
 	const int32_t numSamples = getUsedSamples(saveInstrNum);
 	if (numSamples == 0 || instr[saveInstrNum] == NULL)
 	{
-		okBoxThreadSafe(0, "System message", "Instrument is empty!");
+		okBoxThreadSafe(0, "System message", "Instrument is empty!", NULL);
 		return false;
 	}
 
 	FILE *f = UNICHAR_FOPEN(editor.tmpFilenameU, "wb");
 	if (f == NULL)
 	{
-		okBoxThreadSafe(0, "System message", "General I/O error during saving! Is the file in use?");
+		okBoxThreadSafe(0, "System message", "General I/O error during saving! Is the file in use?", NULL);
 		return false;
 	}
 
@@ -3025,7 +3026,7 @@ static int32_t SDLCALL saveInstrThread(void *ptr)
 	if (result != 1)
 	{
 		fclose(f);
-		okBoxThreadSafe(0, "System message", "Error saving instrument: general I/O error!");
+		okBoxThreadSafe(0, "System message", "Error saving instrument: general I/O error!", NULL);
 		return false;
 	}
 
@@ -3047,7 +3048,7 @@ static int32_t SDLCALL saveInstrThread(void *ptr)
 			{
 				resumeAudio();
 				fclose(f);
-				okBoxThreadSafe(0, "System message", "Error saving instrument: general I/O error!");
+				okBoxThreadSafe(0, "System message", "Error saving instrument: general I/O error!", NULL);
 				return false;
 			}
 		}
@@ -3076,7 +3077,7 @@ void saveInstr(UNICHAR *filenameU, int16_t insNum)
 	thread = SDL_CreateThread(saveInstrThread, NULL, NULL);
 	if (thread == NULL)
 	{
-		okBox(0, "System message", "Couldn't create thread!");
+		okBox(0, "System message", "Couldn't create thread!", NULL);
 		return;
 	}
 
@@ -3107,14 +3108,14 @@ static int32_t SDLCALL loadInstrThread(void *ptr)
 
 	if (editor.tmpInstrFilenameU == NULL)
 	{
-		okBoxThreadSafe(0, "System message", "General I/O error during loading! Is the file in use?");
+		okBoxThreadSafe(0, "System message", "General I/O error during loading! Is the file in use?", NULL);
 		return false;
 	}
 
 	FILE *f = UNICHAR_FOPEN(editor.tmpInstrFilenameU, "rb");
 	if (f == NULL)
 	{
-		okBoxThreadSafe(0, "System message", "General I/O error during loading! Is the file in use?");
+		okBoxThreadSafe(0, "System message", "General I/O error during loading! Is the file in use?", NULL);
 		return false;
 	}
 
@@ -3129,7 +3130,7 @@ static int32_t SDLCALL loadInstrThread(void *ptr)
 
 		if (xi_h.version != 0x0101 && xi_h.version != 0x0102)
 		{
-			okBoxThreadSafe(0, "System message", "Incompatible format version!");
+			okBoxThreadSafe(0, "System message", "Incompatible format version!", NULL);
 			goto loadDone;
 		}
 
@@ -3157,7 +3158,7 @@ static int32_t SDLCALL loadInstrThread(void *ptr)
 			if (!allocateInstr(editor.curInstr))
 			{
 				resumeAudio();
-				okBoxThreadSafe(0, "System message", "Not enough memory!");
+				okBoxThreadSafe(0, "System message", "Not enough memory!", NULL);
 				goto loadDone;
 			}
 
@@ -3197,7 +3198,7 @@ static int32_t SDLCALL loadInstrThread(void *ptr)
 			{
 				freeInstr(editor.curInstr);
 				resumeAudio();
-				okBoxThreadSafe(0, "System message", "General I/O error during loading! Is the file in use?");
+				okBoxThreadSafe(0, "System message", "General I/O error during loading! Is the file in use?", NULL);
 				goto loadDone;
 			}
 
@@ -3260,7 +3261,7 @@ static int32_t SDLCALL loadInstrThread(void *ptr)
 				{
 					freeInstr(editor.curInstr);
 					resumeAudio();
-					okBoxThreadSafe(0, "System message", "Not enough memory!");
+					okBoxThreadSafe(0, "System message", "Not enough memory!", NULL);
 					goto loadDone;
 				}
 
@@ -3269,7 +3270,7 @@ static int32_t SDLCALL loadInstrThread(void *ptr)
 				{
 					freeInstr(editor.curInstr);
 					resumeAudio();
-					okBoxThreadSafe(0, "System message", "General I/O error during loading! Is the file in use?");
+					okBoxThreadSafe(0, "System message", "General I/O error during loading! Is the file in use?", NULL);
 					goto loadDone;
 				}
 
@@ -3309,7 +3310,7 @@ static int32_t SDLCALL loadInstrThread(void *ptr)
 
 			if (pat_h.layers > 1 || pat_h.numSamples > MAX_SMP_PER_INST)
 			{
-				okBoxThreadSafe(0, "System message", "Incompatible instrument!");
+				okBoxThreadSafe(0, "System message", "Incompatible instrument!", NULL);
 				goto loadDone;
 			}
 
@@ -3320,7 +3321,7 @@ static int32_t SDLCALL loadInstrThread(void *ptr)
 
 			if (!allocateInstr(editor.curInstr))
 			{
-				okBoxThreadSafe(0, "System message", "Not enough memory!");
+				okBoxThreadSafe(0, "System message", "Not enough memory!", NULL);
 				goto loadDone;
 			}
 
@@ -3336,7 +3337,7 @@ static int32_t SDLCALL loadInstrThread(void *ptr)
 				{
 					freeInstr(editor.curInstr);
 					resumeAudio();
-					okBoxThreadSafe(0, "System message", "General I/O error during loading! Is the file in use?");
+					okBoxThreadSafe(0, "System message", "General I/O error during loading! Is the file in use?", NULL);
 					goto loadDone;
 				}
 
@@ -3358,7 +3359,7 @@ static int32_t SDLCALL loadInstrThread(void *ptr)
 				{
 					freeInstr(editor.curInstr);
 					resumeAudio();
-					okBoxThreadSafe(0, "System message", "Not enough memory!");
+					okBoxThreadSafe(0, "System message", "Not enough memory!", NULL);
 					goto loadDone;
 				}
 
@@ -3413,7 +3414,7 @@ static int32_t SDLCALL loadInstrThread(void *ptr)
 				{
 					freeInstr(editor.curInstr);
 					resumeAudio();
-					okBoxThreadSafe(0, "System message", "General I/O error during loading! Is the file in use?");
+					okBoxThreadSafe(0, "System message", "General I/O error during loading! Is the file in use?", NULL);
 					goto loadDone;
 				}
 
@@ -3456,10 +3457,10 @@ loadDone:
 	editor.updateCurInstr = true; // setMouseBusy(false) is called in the input/video thread when done
 
 	if (numLoadedSamples > MAX_SMP_PER_INST)
-		okBoxThreadSafe(0, "System message", "Warning: The instrument contained >16 samples. The extra samples were discarded!");
+		okBoxThreadSafe(0, "System message", "Warning: The instrument contained >16 samples. The extra samples were discarded!", NULL);
 
 	if (stereoWarning)
-		okBoxThreadSafe(0, "System message", "Warning: The instrument contained stereo sample(s). They were mixed to mono!");
+		okBoxThreadSafe(0, "System message", "Warning: The instrument contained stereo sample(s). They were mixed to mono!", NULL);
 
 	return true;
 	(void)ptr;
@@ -3485,7 +3486,7 @@ void loadInstr(UNICHAR *filenameU)
 {
 	if (editor.curInstr == 0)
 	{
-		okBox(0, "System message", "The zero-instrument cannot hold intrument data.");
+		okBox(0, "System message", "The zero-instrument cannot hold intrument data.", NULL);
 		return;
 	}
 
@@ -3498,7 +3499,7 @@ void loadInstr(UNICHAR *filenameU)
 		thread = SDL_CreateThread(loadInstrThread, NULL, NULL);
 		if (thread == NULL)
 		{
-			okBox(0, "System message", "Couldn't create thread!");
+			okBox(0, "System message", "Couldn't create thread!", NULL);
 			return;
 		}
 
