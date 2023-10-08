@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_windowed_sinc_h_
+#define _ft2_windowed_sinc_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -24,3 +25,5 @@ extern float *fKaiserSinc, *fDownSample1, *fDownSample2;
 
 bool calcWindowedSincTables(void);
 void freeWindowedSincTables(void);
+
+#endif

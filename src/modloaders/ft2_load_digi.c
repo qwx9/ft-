@@ -13,9 +13,9 @@
 #include "../ft2_tables.h"
 #include "../ft2_sysreqs.h"
 
-#ifdef _MSC_VER  // please don't mess with this struct!
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__)  // please don't mess with this struct!
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct digiHdr_t
 {
@@ -40,8 +40,8 @@ typedef struct digiHdr_t
 __attribute__ ((packed))
 #endif
 digiHdr_t;
-#ifdef _MSC_VER
-#pragma pack(pop)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack off
 #endif
 
 static void readPatternNote(FILE *f, note_t *p);

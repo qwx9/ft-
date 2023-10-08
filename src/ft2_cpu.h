@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_cpu_h_
+#define _ft2_cpu_h_
 
 #include <stdint.h>
 
@@ -29,4 +30,6 @@
 #define CPU_BITS 32
 #define uintCPUWord_t uint32_t
 #define intCPUWord_t int32_t
+#endif
+
 #endif

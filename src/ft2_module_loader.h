@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_module_loader_h_
+#define _ft2_module_loader_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -23,3 +24,5 @@ extern int16_t patternNumRowsTmp[MAX_PATTERNS];
 extern note_t *patternTmp[MAX_PATTERNS];
 extern instr_t *instrTmp[1+256];
 extern song_t songTmp;
+
+#endif

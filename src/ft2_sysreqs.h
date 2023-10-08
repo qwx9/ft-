@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_sysreqs_h_
+#define _ft2_sysreqs_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -35,3 +36,5 @@ extern okBoxData_t okBoxData;
 extern void (*loaderMsgBox)(const char *, ...);
 extern int16_t (*loaderSysReq)(int16_t, const char *, const char *, void (*)(void));
 // ---------------
+
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_midi_h_
+#define _ft2_midi_h_
 
 #ifdef HAS_MIDI
 
@@ -36,5 +37,7 @@ void scrollMidiInputDevListDown(void);
 void sbMidiInputSetPos(uint32_t pos);
 bool testMidiInputDeviceListMouseDown(void);
 int32_t SDLCALL initMidiFunc(void *ptr);
+
+#endif
 
 #endif

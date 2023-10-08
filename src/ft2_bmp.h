@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_bmp_h_
+#define _ft2_bmp_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -17,3 +18,5 @@ extern bmp_t bmp; // ft2_bmp.c
 
 bool loadBMPs(void);
 void freeBMPs(void);
+
+#endif

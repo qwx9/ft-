@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_hpc_h_
+#define _ft2_hpc_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -22,3 +23,5 @@ void hpc_Init(void);
 void hpc_SetDurationInHz(hpc_t *hpc, uint32_t dHz);
 void hpc_ResetCounters(hpc_t *hpc);
 void hpc_Wait(hpc_t *hpc);
+
+#endif

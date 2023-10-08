@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_unicode_h_
+#define _ft2_unicode_h_
 
 #include <stdbool.h>
 
@@ -50,4 +51,6 @@ char *unicharToCp437(UNICHAR *src, bool removeIllegalChars);
 #else
 #define cp437ToUnichar(a) cp437ToUtf8(a)
 #define unicharToCp437(a, b) utf8ToCp437(a, b)
+#endif
+
 #endif
