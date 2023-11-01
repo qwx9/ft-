@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_wav_renderer_h_
+#define _ft2_wav_renderer_h_
 
 #include <stdint.h>
 #include "ft2_header.h"
@@ -33,3 +34,5 @@ void pbWavSongEndDown(void);
 void resetWavRenderer(void);
 void rbWavRenderBitDepth16(void);
 void rbWavRenderBitDepth32(void);
+
+#endif

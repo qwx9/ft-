@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_audioselector_h_
+#define _ft2_audioselector_h_
 
 #include <stdint.h>
 
@@ -19,3 +20,5 @@ void sbAudOutputSetPos(uint32_t pos);
 void sbAudInputSetPos(uint32_t pos);
 void freeAudioDeviceLists(void);
 void freeAudioDeviceSelectorBuffers(void);
+
+#endif

@@ -23,9 +23,9 @@
 #include "ft2_structs.h"
 #include "ft2_bmp.h"
 
-#ifdef _MSC_VER
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct patHdr_t
 {

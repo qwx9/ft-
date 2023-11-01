@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_palette_h_
+#define _ft2_palette_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -44,9 +45,9 @@ enum
 	PAL_NUM
 };
 
-#ifdef _MSC_VER
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct pal16_t
 {
@@ -56,8 +57,8 @@ typedef struct pal16_t
 __attribute__ ((packed))
 #endif
 pal16;
-#ifdef _MSC_VER
-#pragma pack(pop)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack off
 #endif
 
 void setCustomPalColor(uint32_t color);
@@ -99,3 +100,5 @@ void rbConfigPalJungle(void);
 void rbConfigPalUserDefined(void);
 
 extern uint8_t cfg_ColorNum;
+
+#endif

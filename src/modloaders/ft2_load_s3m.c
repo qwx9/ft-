@@ -13,9 +13,9 @@
 #include "../ft2_tables.h"
 #include "../ft2_sysreqs.h"
 
-#ifdef _MSC_VER // please don't mess with these structs!
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__) // please don't mess with these structs!
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct s3mSmpHdr_t
 {
@@ -47,8 +47,8 @@ typedef struct s3mHdr_t
 __attribute__ ((packed))
 #endif
 s3mHdr_t;
-#ifdef _MSC_VER
-#pragma pack(pop)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack off
 #endif
 
 static uint8_t pattBuff[12288];

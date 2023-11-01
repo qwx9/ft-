@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_checkboxes_h_
+#define _ft2_checkboxes_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -120,3 +121,5 @@ void hideCheckBox(uint16_t checkBoxID);
 void handleCheckBoxesWhileMouseDown(void);
 bool testCheckBoxMouseDown(void);
 void testCheckBoxMouseRelease(void);
+
+#endif

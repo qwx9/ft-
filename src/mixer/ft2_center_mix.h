@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_center_mix_h_
+#define _ft2_center_mix_h_
 
 #include <stdint.h>
 #include "../ft2_audio.h"
@@ -62,3 +63,5 @@ void centerMix16bRampBidiLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t num
 void centerMix16bRampNoLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples);
 void centerMix16bRampLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples);
 void centerMix16bRampBidiLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples);
+
+#endif
