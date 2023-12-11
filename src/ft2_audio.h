@@ -79,8 +79,7 @@ typedef struct
 	const int16_t *leftEdgeTaps16;
 
 	const float *fSincLUT;
-	double dVolume;
-	float fCurrVolumeL, fCurrVolumeR, fVolumeLDelta, fVolumeRDelta, fTargetVolumeL, fTargetVolumeR;
+	float fVolume, fCurrVolumeL, fCurrVolumeR, fVolumeLDelta, fVolumeRDelta, fTargetVolumeL, fTargetVolumeR;
 } voice_t;
 
 #if defined(_MSC_VER) || defined(__plan9__)
@@ -156,7 +155,7 @@ void lockMixerCallback(void);
 void unlockMixerCallback(void);
 void resetRampVolumes(void);
 void updateVoices(void);
-void mixReplayerTickToBuffer(uint32_t samplesToMix, uint8_t *stream, uint8_t bitDepth);
+void mixReplayerTickToBuffer(uint32_t samplesToMix, void *stream, uint8_t bitDepth);
 
 // in ft2_audio.c
 extern audio_t audio;
