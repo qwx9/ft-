@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <math.h>
 #include "ft2_header.h"
 #include "ft2_config.h"
 #include "scopes/ft2_scopes.h"

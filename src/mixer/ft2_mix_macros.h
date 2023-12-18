@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_mix_macros_h_
+#define _ft2_mix_macros_h_
 
 #include "../ft2_audio.h"
 #include "ft2_windowed_sinc.h"
@@ -556,3 +557,5 @@
 	{ \
 		position = (int32_t)(smpPtr - base); \
 	}
+
+#endif

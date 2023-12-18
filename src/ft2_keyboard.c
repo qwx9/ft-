@@ -346,6 +346,27 @@ static void handleKeys(SDL_Keycode keycode, SDL_Scancode scanKey)
 		}
 		return;
 
+		case SDL_SCANCODE_VOLUMEUP:
+			if (config.masterVol <= 256-16)
+				config.masterVol += 16;
+			else
+				config.masterVol = 256;
+
+			setAudioAmp(config.boostLevel, config.masterVol, !!(config.specialFlags & BITDEPTH_32));
+			if (ui.configScreenShown && editor.currConfigScreen == CONFIG_SCREEN_AUDIO)
+				showConfigScreen();
+			break;
+		case SDL_SCANCODE_VOLUMEDOWN:
+			if (config.masterVol >= 16)
+				config.masterVol -= 16;
+			else
+				config.masterVol = 0;
+
+			setAudioAmp(config.boostLevel, config.masterVol, !!(config.specialFlags & BITDEPTH_32));
+			if (ui.configScreenShown && editor.currConfigScreen == CONFIG_SCREEN_AUDIO)
+				showConfigScreen();
+			break;
+
 		default: break;
 	}
 

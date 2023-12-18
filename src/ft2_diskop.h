@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_diskop_h_
+#define _ft2_diskop_h_
 
 #include <stdint.h>
 #include "ft2_unicode.h"
@@ -84,3 +85,5 @@ void rbDiskOpSmpSaveIff(void);
 void trimEntryName(char *name, bool isDir);
 void createFileOverwriteText(char *filename, char *buffer);
 bool fileExistsAnsi(char *str);
+
+#endif

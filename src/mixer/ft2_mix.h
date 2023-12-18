@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_mix_h_
+#define _ft2_mix_h_
 
 #include <stdint.h>
 #include "../ft2_cpu.h"
@@ -20,3 +21,5 @@
 typedef void (*mixFunc)(void *, uint32_t, uint32_t);
 
 extern const mixFunc mixFuncTab[]; // ft2_mix.c
+
+#endif

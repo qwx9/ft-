@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_events_h_
+#define _ft2_events_h_
 
 #include <SDL2/SDL.h>
 #include <stdint.h>
@@ -20,4 +21,6 @@ void handleWaitVblQuirk(SDL_Event *event);
 #ifdef _WIN32
 bool handleSingleInstancing(int32_t argc, char **argv);
 void closeSingleInstancing(void);
+#endif
+
 #endif

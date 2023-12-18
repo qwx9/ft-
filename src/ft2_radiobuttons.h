@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_radiobuttons_h_
+#define _ft2_radiobuttons_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -233,3 +234,5 @@ void hideRadioButtonGroup(uint16_t radioButtonGroup);
 void handleRadioButtonsWhileMouseDown(void);
 bool testRadioButtonMouseDown(void);
 void testRadioButtonMouseRelease(void);
+
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_cubic_spline_h_
+#define _ft2_cubic_spline_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -19,3 +20,5 @@ extern float *fCubicSplineLUT;
 
 bool calcCubicSplineTable(void);
 void freeCubicSplineTable(void);
+
+#endif

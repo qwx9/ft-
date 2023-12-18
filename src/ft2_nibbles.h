@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_nibbles_h_
+#define _ft2_nibbles_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -24,3 +25,5 @@ void nibblesToggleSurround(void);
 void nibblesToggleGrid(void);
 void nibblesToggleWrap(void);
 bool testNibblesCheatCodes(SDL_Keycode keycode);
+
+#endif
