@@ -48,7 +48,6 @@ HFILES=\
 	src/ft2_video.h\
 	src/ft2_wav_renderer.h\
 	src/helpdata/ft2_help_data.h\
-	src/mixer/ft2_center_mix.h\
 	src/mixer/ft2_cubic_spline.h\
 	src/mixer/ft2_mix.h\
 	src/mixer/ft2_mix_macros.h\
@@ -108,7 +107,6 @@ OFILES=\
 	src/gfxdata/ft2_bmp_mouse.$O\
 	src/gfxdata/ft2_bmp_nibbles.$O\
 	src/gfxdata/ft2_bmp_scopes.$O\
-	src/mixer/ft2_center_mix.$O\
 	src/mixer/ft2_cubic_spline.$O\
 	src/mixer/ft2_mix.$O\
 	src/mixer/ft2_silence_mix.$O\
