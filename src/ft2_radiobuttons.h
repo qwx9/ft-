@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "ft2_cpu.h"
 
 enum // RADIOBUTTONS
 {
@@ -66,9 +65,7 @@ enum // RADIOBUTTONS
 	// AUDIO FREQUENCY
 	RB_CONFIG_AUDIO_44KHZ,
 	RB_CONFIG_AUDIO_48KHZ,
-#if CPU_64BIT
 	RB_CONFIG_AUDIO_96KHZ,
-#endif
 
 	// AUDIO INPUT FREQUENCY
 	RB_CONFIG_AUDIO_INPUT_44KHZ,

@@ -136,6 +136,7 @@ int main(int argc, char *argv[])
 		showErrorMsgBox("Couldn't initialize SDL:\n%s", SDL_GetError());
 		return 1;
 	}
+
 	SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
 
 	/* Text input is started by default in SDL2, turn it off to remove ~2ms spikes per key press.
@@ -214,6 +215,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	initAboutScreen();
 	pauseAudio();
 	resumeAudio();
 	rescanAudioDevices();

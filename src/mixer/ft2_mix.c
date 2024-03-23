@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include "ft2_mix.h"
 #include "ft2_mix_macros.h"
-#include "../ft2_cpu.h"
 
 /*
 ** ------------ 32-bit floating-point audio channel mixer ------------
@@ -11,7 +10,7 @@
 ** Specifications:
 ** - Interpolation: None, 2-tap linear, 4-tap cubic spline, 8-tap windowed-sinc, 16-tap windowed-sinc
 ** - FT2-styled linear volume ramping (can be turned off)
-** - 32.32 (16.16 if 32-bit CPU) fixed-point precision for resampling delta/position
+** - 32.32 fixed-point precision for resampling delta/position
 ** - 32-bit floating-point precision for mixing and interpolation
 **
 ** This file has separate routines for EVERY possible sampling variation:
@@ -37,7 +36,7 @@ static void mix8bNoLoop(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -79,7 +78,7 @@ static void mix8bLoop(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -121,7 +120,7 @@ static void mix8bBidiLoop(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -164,7 +163,7 @@ static void mix8bNoLoopS8Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSampl
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -207,7 +206,7 @@ static void mix8bLoopS8Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -274,7 +273,7 @@ static void mix8bBidiLoopS8Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSam
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -342,7 +341,7 @@ static void mix8bNoLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSample
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -384,7 +383,7 @@ static void mix8bLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -426,7 +425,7 @@ static void mix8bBidiLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSamp
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -464,13 +463,13 @@ static void mix8bBidiLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSamp
 	SET_BACK_MIXER_POS
 }
 
-static void mix8bNoLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
+static void mix8bNoLoopS32Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 {
 	const int8_t *base, *smpPtr;
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -506,14 +505,14 @@ static void mix8bNoLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamp
 	SET_BACK_MIXER_POS
 }
 
-static void mix8bLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
+static void mix8bLoopS32Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 {
 	const int8_t *base, *smpPtr;
 	int8_t *smpTapPtr;
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -573,14 +572,14 @@ static void mix8bLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSample
 	SET_BACK_MIXER_POS
 }
 
-static void mix8bBidiLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
+static void mix8bBidiLoopS32Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 {
 	const int8_t *base, *revBase, *smpPtr;
 	int8_t *smpTapPtr;
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -648,7 +647,7 @@ static void mix8bNoLoopCIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSample
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -691,7 +690,7 @@ static void mix8bLoopCIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -758,7 +757,7 @@ static void mix8bBidiLoopCIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSamp
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -827,7 +826,7 @@ static void mix8bRampNoLoop(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -877,7 +876,7 @@ static void mix8bRampLoop(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -927,7 +926,7 @@ static void mix8bRampBidiLoop(voice_t *v, uint32_t bufferPos, uint32_t numSample
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -979,7 +978,7 @@ static void mix8bRampNoLoopS8Intrp(voice_t *v, uint32_t bufferPos, uint32_t numS
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -1030,7 +1029,7 @@ static void mix8bRampLoopS8Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSam
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -1110,7 +1109,7 @@ static void mix8bRampBidiLoopS8Intrp(voice_t *v, uint32_t bufferPos, uint32_t nu
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -1191,7 +1190,7 @@ static void mix8bRampNoLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSa
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -1241,7 +1240,7 @@ static void mix8bRampLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSamp
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -1291,7 +1290,7 @@ static void mix8bRampBidiLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t num
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -1336,14 +1335,14 @@ static void mix8bRampBidiLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t num
 	SET_BACK_MIXER_POS
 }
 
-static void mix8bRampNoLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
+static void mix8bRampNoLoopS32Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 {
 	const int8_t *base, *smpPtr;
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -1386,7 +1385,7 @@ static void mix8bRampNoLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t num
 	SET_BACK_MIXER_POS
 }
 
-static void mix8bRampLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
+static void mix8bRampLoopS32Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 {
 	const int8_t *base, *smpPtr;
 	int8_t *smpTapPtr;
@@ -1394,7 +1393,7 @@ static void mix8bRampLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSa
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -1466,7 +1465,7 @@ static void mix8bRampLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSa
 	SET_BACK_MIXER_POS
 }
 
-static void mix8bRampBidiLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
+static void mix8bRampBidiLoopS32Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 {
 	const int8_t *base, *revBase, *smpPtr;
 	int8_t *smpTapPtr;
@@ -1474,7 +1473,7 @@ static void mix8bRampBidiLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t n
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -1555,7 +1554,7 @@ static void mix8bRampNoLoopCIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSa
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -1606,7 +1605,7 @@ static void mix8bRampLoopCIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSamp
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -1686,7 +1685,7 @@ static void mix8bRampBidiLoopCIntrp(voice_t *v, uint32_t bufferPos, uint32_t num
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -1770,7 +1769,7 @@ static void mix16bNoLoop(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -1812,7 +1811,7 @@ static void mix16bLoop(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -1854,7 +1853,7 @@ static void mix16bBidiLoop(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -1898,7 +1897,7 @@ static void mix16bNoLoopS8Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamp
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -1941,7 +1940,7 @@ static void mix16bLoopS8Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSample
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -2008,7 +2007,7 @@ static void mix16bBidiLoopS8Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSa
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -2076,7 +2075,7 @@ static void mix16bNoLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSampl
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -2118,7 +2117,7 @@ static void mix16bLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -2160,7 +2159,7 @@ static void mix16bBidiLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSam
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -2198,13 +2197,13 @@ static void mix16bBidiLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSam
 	SET_BACK_MIXER_POS
 }
 
-static void mix16bNoLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
+static void mix16bNoLoopS32Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 {
 	const int16_t *base, *smpPtr;
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -2240,14 +2239,14 @@ static void mix16bNoLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSam
 	SET_BACK_MIXER_POS
 }
 
-static void mix16bLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
+static void mix16bLoopS32Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 {
 	const int16_t *base, *smpPtr;
 	int16_t *smpTapPtr;
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -2307,14 +2306,14 @@ static void mix16bLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSampl
 	SET_BACK_MIXER_POS
 }
 
-static void mix16bBidiLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
+static void mix16bBidiLoopS32Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 {
 	const int16_t *base, *revBase, *smpPtr;
 	int16_t *smpTapPtr;
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -2382,7 +2381,7 @@ static void mix16bNoLoopCIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSampl
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -2425,7 +2424,7 @@ static void mix16bLoopCIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -2492,7 +2491,7 @@ static void mix16bBidiLoopCIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSam
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL
 	GET_MIXER_VARS
@@ -2561,7 +2560,7 @@ static void mix16bRampNoLoop(voice_t *v, uint32_t bufferPos, uint32_t numSamples
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -2611,7 +2610,7 @@ static void mix16bRampLoop(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -2661,7 +2660,7 @@ static void mix16bRampBidiLoop(voice_t *v, uint32_t bufferPos, uint32_t numSampl
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -2713,7 +2712,7 @@ static void mix16bRampNoLoopS8Intrp(voice_t *v, uint32_t bufferPos, uint32_t num
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -2764,7 +2763,7 @@ static void mix16bRampLoopS8Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSa
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -2844,7 +2843,7 @@ static void mix16bRampBidiLoopS8Intrp(voice_t *v, uint32_t bufferPos, uint32_t n
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -2925,7 +2924,7 @@ static void mix16bRampNoLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t numS
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -2975,7 +2974,7 @@ static void mix16bRampLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSam
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -3025,7 +3024,7 @@ static void mix16bRampBidiLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t nu
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -3070,14 +3069,14 @@ static void mix16bRampBidiLoopLIntrp(voice_t *v, uint32_t bufferPos, uint32_t nu
 	SET_BACK_MIXER_POS
 }
 
-static void mix16bRampNoLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
+static void mix16bRampNoLoopS32Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 {
 	const int16_t *base, *smpPtr;
 	float fSample, *fMixBufferL, *fMixBufferR;
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -3120,7 +3119,7 @@ static void mix16bRampNoLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t nu
 	SET_BACK_MIXER_POS
 }
 
-static void mix16bRampLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
+static void mix16bRampLoopS32Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 {
 	const int16_t *base, *smpPtr;
 	int16_t *smpTapPtr;
@@ -3128,7 +3127,7 @@ static void mix16bRampLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numS
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -3200,7 +3199,7 @@ static void mix16bRampLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numS
 	SET_BACK_MIXER_POS
 }
 
-static void mix16bRampBidiLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
+static void mix16bRampBidiLoopS32Intrp(voice_t *v, uint32_t bufferPos, uint32_t numSamples)
 {
 	const int16_t *base, *revBase, *smpPtr;
 	int16_t *smpTapPtr;
@@ -3208,7 +3207,7 @@ static void mix16bRampBidiLoopS16Intrp(voice_t *v, uint32_t bufferPos, uint32_t 
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -3289,7 +3288,7 @@ static void mix16bRampNoLoopCIntrp(voice_t *v, uint32_t bufferPos, uint32_t numS
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -3340,7 +3339,7 @@ static void mix16bRampLoopCIntrp(voice_t *v, uint32_t bufferPos, uint32_t numSam
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac;
+	uint64_t positionFrac;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -3420,7 +3419,7 @@ static void mix16bRampBidiLoopCIntrp(voice_t *v, uint32_t bufferPos, uint32_t nu
 	int32_t position;
 	float fVolumeLDelta, fVolumeRDelta, fVolumeL, fVolumeR;
 	uint32_t i, samplesToMix, samplesLeft;
-	uintCPUWord_t positionFrac, tmpDelta;
+	uint64_t positionFrac, tmpDelta;
 
 	GET_VOL_RAMP
 	GET_MIXER_VARS_RAMP
@@ -3510,9 +3509,9 @@ const mixFunc mixFuncTab[] =
 	(mixFunc)mix8bNoLoopLIntrp,
 	(mixFunc)mix8bLoopLIntrp,
 	(mixFunc)mix8bBidiLoopLIntrp,
-	(mixFunc)mix8bNoLoopS16Intrp,
-	(mixFunc)mix8bLoopS16Intrp,
-	(mixFunc)mix8bBidiLoopS16Intrp,
+	(mixFunc)mix8bNoLoopS32Intrp,
+	(mixFunc)mix8bLoopS32Intrp,
+	(mixFunc)mix8bBidiLoopS32Intrp,
 	(mixFunc)mix8bNoLoopCIntrp,
 	(mixFunc)mix8bLoopCIntrp,
 	(mixFunc)mix8bBidiLoopCIntrp,
@@ -3527,9 +3526,9 @@ const mixFunc mixFuncTab[] =
 	(mixFunc)mix16bNoLoopLIntrp,
 	(mixFunc)mix16bLoopLIntrp,
 	(mixFunc)mix16bBidiLoopLIntrp,
-	(mixFunc)mix16bNoLoopS16Intrp,
-	(mixFunc)mix16bLoopS16Intrp,
-	(mixFunc)mix16bBidiLoopS16Intrp,
+	(mixFunc)mix16bNoLoopS32Intrp,
+	(mixFunc)mix16bLoopS32Intrp,
+	(mixFunc)mix16bBidiLoopS32Intrp,
 	(mixFunc)mix16bNoLoopCIntrp,
 	(mixFunc)mix16bLoopCIntrp,
 	(mixFunc)mix16bBidiLoopCIntrp,
@@ -3546,9 +3545,9 @@ const mixFunc mixFuncTab[] =
 	(mixFunc)mix8bRampNoLoopLIntrp,
 	(mixFunc)mix8bRampLoopLIntrp,
 	(mixFunc)mix8bRampBidiLoopLIntrp,
-	(mixFunc)mix8bRampNoLoopS16Intrp,
-	(mixFunc)mix8bRampLoopS16Intrp,
-	(mixFunc)mix8bRampBidiLoopS16Intrp,
+	(mixFunc)mix8bRampNoLoopS32Intrp,
+	(mixFunc)mix8bRampLoopS32Intrp,
+	(mixFunc)mix8bRampBidiLoopS32Intrp,
 	(mixFunc)mix8bRampNoLoopCIntrp,
 	(mixFunc)mix8bRampLoopCIntrp,
 	(mixFunc)mix8bRampBidiLoopCIntrp,
@@ -3563,9 +3562,9 @@ const mixFunc mixFuncTab[] =
 	(mixFunc)mix16bRampNoLoopLIntrp,
 	(mixFunc)mix16bRampLoopLIntrp,
 	(mixFunc)mix16bRampBidiLoopLIntrp,
-	(mixFunc)mix16bRampNoLoopS16Intrp,
-	(mixFunc)mix16bRampLoopS16Intrp,
-	(mixFunc)mix16bRampBidiLoopS16Intrp,
+	(mixFunc)mix16bRampNoLoopS32Intrp,
+	(mixFunc)mix16bRampLoopS32Intrp,
+	(mixFunc)mix16bRampBidiLoopS32Intrp,
 	(mixFunc)mix16bRampNoLoopCIntrp,
 	(mixFunc)mix16bRampLoopCIntrp,
 	(mixFunc)mix16bRampBidiLoopCIntrp

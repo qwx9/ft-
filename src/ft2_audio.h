@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 #include "ft2_replayer.h"
-#include "ft2_cpu.h"
 
 enum
 {
@@ -16,12 +15,7 @@ enum
 #define DEFAULT_AUDIO_FREQ 48000
 
 #define MIN_AUDIO_FREQ 44100
-
-#if CPU_64BIT
 #define MAX_AUDIO_FREQ 96000
-#else
-#define MAX_AUDIO_FREQ 48000
-#endif
 
 #define MAX_AUDIO_DEVICES 99
 
@@ -43,7 +37,7 @@ typedef struct audio_t
 	char *currInputDevice, *currOutputDevice, *lastWorkingAudioDeviceName;
 	char *inputDeviceNames[MAX_AUDIO_DEVICES], *outputDeviceNames[MAX_AUDIO_DEVICES];
 	volatile bool locked, resetSyncTickTimeFlag, volumeRampingFlag;
-	bool linearPeriodsFlag, rescanAudioDevicesSupported;
+	bool linearPeriodsFlag, rescanAudioDevicesSupported, sincInterpolation;
 	volatile uint8_t interpolationType;
 	int32_t inputDeviceNum, outputDeviceNum, lastWorkingAudioFreq, lastWorkingAudioBits;
 	uint32_t quickVolRampSamples, freq;
@@ -71,8 +65,7 @@ typedef struct
 	uint8_t mixFuncOffset, panning, loopType, scopeVolume;
 	int32_t position, sampleEnd, loopStart, loopLength, oldPeriod;
 	uint32_t volumeRampLength;
-
-	uintCPUWord_t positionFrac, delta, oldDelta, scopeDelta;
+	uint64_t positionFrac, delta, oldDelta, scopeDelta;
 
 	// if (loopEnabled && hasLooped && samplingPos <= loopStart+MAX_LEFT_TAPS) readFixedTapsFromThisPointer();
 	const int8_t *leftEdgeTaps8;

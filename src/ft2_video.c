@@ -34,7 +34,6 @@
 #include "ft2_midi.h"
 #include "ft2_bmp.h"
 #include "ft2_structs.h"
-#include "ft2_cpu.h"
 
 static const uint8_t textCursorData[12] =
 {
@@ -127,8 +126,8 @@ static void drawFPSCounter(void)
 	             "Audio latency: %.1fms (expected %.1fms)\n" \
 	             "Render size: %dx%d (offset %d,%d)\n" \
 	             "Disp. size: %dx%d (window: %dx%d)\n" \
-	             "Render scaling: x=%.2f, y=%.2f\n" \
-	             "Mouse to render space muls: x=%.2f, y=%.2f\n" \
+	             "Render scaling: x=%.4f, y=%.4f\n" \
+	             "Mouse pixel-space muls: x=%.4f, y=%.4f\n" \
 	             "Relative mouse coords: %d,%d\n" \
 	             "Absolute mouse coords: %d,%d\n" \
 	             "Press CTRL+SHIFT+F to close this box.\n",
@@ -142,8 +141,8 @@ static void drawFPSCounter(void)
 	             dAudLatency, ((audio.wantSamples * 1000.0) / audio.wantFreq),
 	             video.renderW, video.renderH, video.renderX, video.renderY,
 	             video.displayW, video.displayH, video.windowW, video.windowH,
-	             video.renderW / (float)SCREEN_W, video.renderH / (float)SCREEN_H,
-	             video.fMouseXMul, video.fMouseYMul,
+	             (double)video.renderW / SCREEN_W, (double)video.renderH / SCREEN_H,
+	             video.dMouseXMul, video.dMouseYMul,
 	             mouse.x, mouse.y,
 	             mouse.absX, mouse.absY);
 
@@ -207,7 +206,11 @@ void flipFrame(void)
 	if (!minimized)
 		SDL_RenderClear(video.renderer);
 
-	SDL_RenderCopy(video.renderer, video.texture, NULL, NULL);
+	if (video.useCustomRenderRect)
+		SDL_RenderCopy(video.renderer, video.texture, NULL, &video.renderRect);
+	else
+		SDL_RenderCopy(video.renderer, video.texture, NULL, NULL);
+
 	SDL_RenderPresent(video.renderer);
 
 	eraseSprites();
@@ -266,104 +269,70 @@ void showErrorMsgBox(const char *fmt, ...)
 
 static void updateRenderSizeVars(void)
 {
-	float fXScale, fYScale;
+	SDL_DisplayMode dm;
 
-	if (video.useDesktopMouseCoords)
-	{
-		SDL_DisplayMode dm;
-		int32_t di = SDL_GetWindowDisplayIndex(video.window);
-		if (di < 0)
-			di = 0; // return display index 0 (default) on error
+	int32_t di = SDL_GetWindowDisplayIndex(video.window);
+	if (di < 0)
+		di = 0; // return display index 0 (default) on error
 
-		SDL_GetDesktopDisplayMode(di, &dm);
-		video.displayW = dm.w;
-		video.displayH = dm.h;
-	}
-	else
-	{
-		SDL_GetWindowSize(video.window, &video.displayW, &video.displayH);
-	}
+	SDL_GetDesktopDisplayMode(di, &dm);
+	video.displayW = dm.w;
+	video.displayH = dm.h;
 
 	SDL_GetWindowSize(video.window, &video.windowW, &video.windowH);
+	video.renderX = 0;
+	video.renderY = 0;
+
+	video.useCustomRenderRect = false;
 
 	if (video.fullscreen)
 	{
 		if (config.specialFlags2 & STRETCH_IMAGE)
 		{
-			video.renderW = video.displayW;
-			video.renderH = video.displayH;
-			video.renderX = 0;
-			video.renderY = 0;
+			// "streched out" windowed fullscreen
+
+			video.renderW = video.windowW;
+			video.renderH = video.windowH;
 		}
 		else
 		{
-			SDL_RenderGetScale(video.renderer, &fXScale, &fYScale);
+			// centered windowed fullscreen, with pixel-perfect integer upscaling
 
-			video.renderW = (int32_t)(SCREEN_W * fXScale);
-			video.renderH = (int32_t)(SCREEN_H * fYScale);
+			const int32_t maxUpscaleFactor = MIN(video.windowW / SCREEN_W, video.windowH / SCREEN_H);
+			video.renderW = SCREEN_W * maxUpscaleFactor;
+			video.renderH = SCREEN_H * maxUpscaleFactor;
+			video.renderX = (video.windowW - video.renderW) / 2;
+			video.renderY = (video.windowH - video.renderH) / 2;
 
-			// high-DPI hackery:
-			//  On high-DPI systems, the display w/h are given in logical pixels,
-			//  but the renderer size is given in physical pixels. Since our internal
-			//  render{X,Y,W,H} variables need to be in logical coordinates, as that's
-			//  what mouse input uses, scale them by the screen's DPI scale factor,
-			//  which is the physical (renderer) size / the logical (window) size.
-			//  On non high-DPI systems, this is effectively a no-op.
-			int32_t actualScreenW, actualScreenH;
-			SDL_GetRendererOutputSize(video.renderer, &actualScreenW, &actualScreenH);
+			// get hi-DPI upscale factors (returns 1.0 if no hi-DPI upscaling)
+			int32_t widthInPixels, heightInPixels;
+			SDL_GL_GetDrawableSize(video.window, &widthInPixels, &heightInPixels);
+			double dHiDPIScaleX = (double)widthInPixels / video.windowW;
+			double dHiDPIScaleY = (double)heightInPixels / video.windowH;
 
-			const double dXUpscale = (const double)actualScreenW / video.displayW;
-			const double dYUpscale = (const double)actualScreenH / video.displayH;
-
-			// downscale back to correct sizes
-			if (dXUpscale != 0.0) video.renderW = (int32_t)(video.renderW / dXUpscale);
-			if (dYUpscale != 0.0) video.renderH = (int32_t)(video.renderH / dYUpscale);
-
-			video.renderX = (video.displayW - video.renderW) / 2;
-			video.renderY = (video.displayH - video.renderH) / 2;
+			video.renderRect.x = (int32_t)floor(video.renderX * dHiDPIScaleX);
+			video.renderRect.y = (int32_t)floor(video.renderY * dHiDPIScaleY);
+			video.renderRect.w = (int32_t)floor(video.renderW * dHiDPIScaleX);
+			video.renderRect.h = (int32_t)floor(video.renderH * dHiDPIScaleY);
+			video.useCustomRenderRect = true; // use the destination coordinates above in SDL_RenderCopy()
 		}
 	}
 	else
 	{
-		SDL_GetWindowSize(video.window, &video.renderW, &video.renderH);
+		// windowed mode
 
-		video.renderX = 0;
-		video.renderY = 0;
+		SDL_GetWindowSize(video.window, &video.renderW, &video.renderH);
 	}
 
-	// for mouse cursor creation
-	video.xScale = (uint32_t)round(video.renderW / (double)SCREEN_W);
-	video.yScale = (uint32_t)round(video.renderH / (double)SCREEN_H);
-
+	// "hardware mouse" calculations
+	video.mouseCursorUpscaleFactor = MIN(video.renderW / SCREEN_W, video.renderH / SCREEN_H);
 	createMouseCursors();
 }
 
 void enterFullscreen(void)
 {
 	SDL_SetWindowFullscreen(video.window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-
-	if (config.specialFlags2 & STRETCH_IMAGE)
-	{
-		SDL_DisplayMode dm;
-
-		int32_t di = SDL_GetWindowDisplayIndex(video.window);
-		if (di < 0)
-			di = 0; // return display index 0 (default) on error
-
-		SDL_GetDesktopDisplayMode(di, &dm);
-
-		SDL_RenderSetLogicalSize(video.renderer, dm.w, dm.h);
-	}
-	else
-	{
-		SDL_RenderSetLogicalSize(video.renderer, SCREEN_W, SCREEN_H);
-	}
-
-	SDL_SetWindowSize(video.window, SCREEN_W, SCREEN_H);
-
-#ifndef __unix__ // can be severely buggy on Linux... (at least when used like this)
-	SDL_SetWindowGrab(video.window, SDL_TRUE);
-#endif
+	SDL_Delay(15); // fixes possible issues
 
 	updateRenderSizeVars();
 	updateMouseScaling();
@@ -373,15 +342,10 @@ void enterFullscreen(void)
 void leaveFullscreen(void)
 {
 	SDL_SetWindowFullscreen(video.window, 0);
-	SDL_RenderSetLogicalSize(video.renderer, SCREEN_W, SCREEN_H);
+	SDL_Delay(15); // fixes possible issues
 
-	setWindowSizeFromConfig(false);
-
-	SDL_SetWindowSize(video.window, SCREEN_W * video.upscaleFactor, SCREEN_H * video.upscaleFactor);
-
-#ifndef __unix__
-	SDL_SetWindowGrab(video.window, SDL_FALSE);
-#endif
+	setWindowSizeFromConfig(false); // false = do not change actual window size, only update variables
+	SDL_SetWindowSize(video.window, SCREEN_W * video.windowModeUpscaleFactor, SCREEN_H * video.windowModeUpscaleFactor);
 
 	updateRenderSizeVars();
 	updateMouseScaling();
@@ -820,7 +784,7 @@ void setWindowSizeFromConfig(bool updateRenderer)
 	uint8_t i;
 	SDL_DisplayMode dm;
 
-	uint8_t oldUpscaleFactor = video.upscaleFactor;
+	uint8_t oldUpscaleFactor = video.windowModeUpscaleFactor;
 	if (config.windowFlags & WINSIZE_AUTO)
 	{
 		int32_t di = SDL_GetWindowDisplayIndex(video.window);
@@ -835,30 +799,30 @@ void setWindowSizeFromConfig(bool updateRenderer)
 				// height test is slightly taller because of window title, window borders and taskbar/menu/dock
 				if (dm.w >= SCREEN_W*i && dm.h >= (SCREEN_H+64)*i)
 				{
-					video.upscaleFactor = i;
+					video.windowModeUpscaleFactor = i;
 					break;
 				}
 			}
 
 			if (i == 0)
-				video.upscaleFactor = 1; // 1x is not going to fit, but use 1x anyways...
+				video.windowModeUpscaleFactor = 1; // 1x is not going to fit, but use 1x anyways...
 		}
 		else
 		{
 			// couldn't get screen resolution, set to 1x
-			video.upscaleFactor = 1;
+			video.windowModeUpscaleFactor = 1;
 		}
 	}
-	else if (config.windowFlags & WINSIZE_1X) video.upscaleFactor = 1;
-	else if (config.windowFlags & WINSIZE_2X) video.upscaleFactor = 2;
-	else if (config.windowFlags & WINSIZE_3X) video.upscaleFactor = 3;
-	else if (config.windowFlags & WINSIZE_4X) video.upscaleFactor = 4;
+	else if (config.windowFlags & WINSIZE_1X) video.windowModeUpscaleFactor = 1;
+	else if (config.windowFlags & WINSIZE_2X) video.windowModeUpscaleFactor = 2;
+	else if (config.windowFlags & WINSIZE_3X) video.windowModeUpscaleFactor = 3;
+	else if (config.windowFlags & WINSIZE_4X) video.windowModeUpscaleFactor = 4;
 
 	if (updateRenderer)
 	{
-		SDL_SetWindowSize(video.window, SCREEN_W * video.upscaleFactor, SCREEN_H * video.upscaleFactor);
+		SDL_SetWindowSize(video.window, SCREEN_W * video.windowModeUpscaleFactor, SCREEN_H * video.windowModeUpscaleFactor);
 
-		if (oldUpscaleFactor != video.upscaleFactor)
+		if (oldUpscaleFactor != video.windowModeUpscaleFactor)
 			SDL_SetWindowPosition(video.window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
 		updateRenderSizeVars();
@@ -879,31 +843,17 @@ void updateWindowTitle(bool forceUpdate)
 		strncpy(songTitleTrunc, songTitle, sizeof (songTitleTrunc)-1);
 		songTitleTrunc[sizeof (songTitleTrunc)-1] = '\0';
 
-#if CPU_BITS==32
-			if (song.isModified)
-				sprintf(wndTitle, "Fasttracker II clone v%s (32-bit) - \"%s\" (unsaved)", PROG_VER_STR, songTitleTrunc);
-			else
-				sprintf(wndTitle, "Fasttracker II clone v%s (32-bit) - \"%s\"", PROG_VER_STR, songTitleTrunc);
-#else
 			if (song.isModified)
 				sprintf(wndTitle, "Fasttracker II clone v%s - \"%s\" (unsaved)", PROG_VER_STR, songTitleTrunc);
 			else
 				sprintf(wndTitle, "Fasttracker II clone v%s - \"%s\"", PROG_VER_STR, songTitleTrunc);
-#endif
 	}
 	else
 	{
-#if CPU_BITS==32
-		if (song.isModified)
-			sprintf(wndTitle, "Fasttracker II clone v%s (32-bit) - \"untitled\" (unsaved)", PROG_VER_STR);
-		else
-			sprintf(wndTitle, "Fasttracker II clone v%s (32-bit) - \"untitled\"", PROG_VER_STR);
-#else
 		if (song.isModified)
 			sprintf(wndTitle, "Fasttracker II clone v%s - \"untitled\" (unsaved)", PROG_VER_STR);
 		else
 			sprintf(wndTitle, "Fasttracker II clone v%s - \"untitled\"", PROG_VER_STR);
-#endif
 	}
 
 	SDL_SetWindowTitle(video.window, wndTitle);
@@ -961,7 +911,7 @@ bool setupWindow(void)
 		video.vsync60HzPresent = false;
 
 	video.window = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-		SCREEN_W * video.upscaleFactor, SCREEN_H * video.upscaleFactor,
+		SCREEN_W * video.windowModeUpscaleFactor, SCREEN_H * video.windowModeUpscaleFactor,
 		windowFlags);
 
 	if (video.window == NULL)
@@ -1005,12 +955,6 @@ bool setupRenderer(void)
 		}
 	}
 
-	SDL_RenderSetLogicalSize(video.renderer, SCREEN_W, SCREEN_H);
-
-#if SDL_MINOR_VERSION >= 24 || (SDL_MINOR_VERSION == 0 && SDL_PATCHLEVEL >= 5)
-	SDL_RenderSetIntegerScale(video.renderer, SDL_TRUE);
-#endif
-
 	SDL_SetRenderDrawBlendMode(video.renderer, SDL_BLENDMODE_NONE);
 
 	if (!recreateTexture())
@@ -1021,7 +965,7 @@ bool setupRenderer(void)
 	}
 
 	// framebuffer used by SDL (for texture)
-	video.frameBuffer = (uint32_t *)malloc(SCREEN_W * SCREEN_H * sizeof (int32_t));
+	video.frameBuffer = (uint32_t *)malloc(SCREEN_W * SCREEN_H * sizeof (uint32_t));
 	if (video.frameBuffer == NULL)
 	{
 		showErrorMsgBox("Not enough memory!");
@@ -1030,12 +974,6 @@ bool setupRenderer(void)
 
 	if (!setupSprites())
 		return false;
-
-	// Workaround: SDL_GetGlobalMouseState() doesn't work with KMSDRM/Wayland
-	video.useDesktopMouseCoords = true;
-	const char *videoDriver = SDL_GetCurrentVideoDriver();
-	if (videoDriver != NULL && (strcmp("KMSDRM", videoDriver) == 0 || strcmp("wayland", videoDriver) == 0))
-		video.useDesktopMouseCoords = false;
 
 	updateRenderSizeVars();
 	updateMouseScaling();
@@ -1055,7 +993,7 @@ void handleRedrawing(void)
 	{
 		if (ui.aboutScreenShown)
 		{
-			aboutFrame();
+			renderAboutScreenFrame();
 		}
 		else if (ui.nibblesShown)
 		{

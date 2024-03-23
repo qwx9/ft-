@@ -804,7 +804,11 @@ you exit the program.
 >@X060@C002
 Selects what type of resampling interpolation to use.
 If you want to have an authentic FT2 sound, select "linear".
-Sinc will give the best interpolation, but it may sound too filtered on lo-fi samples.
+If you want a good trade-off between quality and muddiness for more lo-fi samples,
+select "Cubic spline".
+However, if you mainly use hi-fi samples (or play XMs with hi-fi samples), then pick
+any of the two sinc options for the most clear sound. Keep in mind that these will
+make XMs with lo-fi samples sound very muddy, though! 
 Tip: Play around with the different options...
 
 >@X040@C001Volume ramping:
@@ -848,8 +852,8 @@ but also potential stuttering.
 
 >@X040@C001Stretched:
 >@X060@C002
-Makes fullscreen mode completely stretch out the image. This can result in
-aliasing (uneven pixel widths) if the aspect ratio of the screen is not 16:10.
+Makes fullscreen mode completely stretch out the image.
+This can and will result in uneven pixel sizes, making the image look quite bad.
 The "Pixel filter" setting can help with this, but it makes the image look blurry.
  
 >@X040@C001Pixel filter:
@@ -937,8 +941,8 @@ END
 >
 >@X010@C001Video:
 >@C002
->@X010- Fullscreen mode can be unbearably slow on a Raspberry Pi (even on RPi 4)
+>@X010- Fullscreen mode can have issues with the mouse pixel mapping on some
+>@X021Linux systems.
 >@X010- Fullscreen mode can have several problems on multi-monitor systems
->@X010- Fullscreen mode can have several problems on some Linux systems
 
 END

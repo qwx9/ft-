@@ -164,6 +164,9 @@
     <ClCompile Include="..\..\src\mixer\ft2_cubic_spline.c">
       <Filter>mixer</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\modloaders\ft2_load_bem.c">
+      <Filter>modloaders</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\rtmidi\RtMidi.h">
@@ -315,9 +318,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\scopes\ft2_scopes.h">
       <Filter>scopes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\ft2_cpu.h">
-      <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\ft2_hpc.h">
       <Filter>headers</Filter>

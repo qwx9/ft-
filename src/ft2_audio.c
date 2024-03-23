@@ -196,18 +196,24 @@ void audioSetInterpolationType(uint8_t interpolationType)
 	lockMixerCallback();
 	audio.interpolationType = interpolationType;
 
+	audio.sincInterpolation = false;
+
 	// set sinc LUT pointers
 	if (config.interpolation == INTERPOLATION_SINC8)
 	{
 		fKaiserSinc = fKaiserSinc_8;
 		fDownSample1 = fDownSample1_8;
 		fDownSample2 = fDownSample2_8;
+
+		audio.sincInterpolation = true;
 	}
 	else if (config.interpolation == INTERPOLATION_SINC16)
 	{
 		fKaiserSinc = fKaiserSinc_16;
 		fDownSample1 = fDownSample1_16;
 		fDownSample2 = fDownSample2_16;
+
+		audio.sincInterpolation = true;
 	}
 
 	unlockMixerCallback();
@@ -388,14 +394,13 @@ void updateVoices(void)
 				const double dHz = dPeriod2Hz(ch->finalPeriod);
 
 				// set voice delta
-				const uintCPUWord_t delta = v->oldDelta = (intCPUWord_t)((dHz * audio.dHz2MixDeltaMul) + 0.5); // Hz -> fixed-point delta (rounded)
+				const uint64_t delta = v->oldDelta = (int64_t)((dHz * audio.dHz2MixDeltaMul) + 0.5); // Hz -> fixed-point delta (rounded)
 
-				if (audio.interpolationType == INTERPOLATION_SINC8 || audio.interpolationType == INTERPOLATION_SINC16)
+				if (audio.sincInterpolation) // decide which sinc LUT to use according to the resampling ratio
 				{
-					// decide which sinc LUT to use according to the resampling ratio
-					if (delta <= (uintCPUWord_t)(1.1875 * MIXER_FRAC_SCALE))
+					if (delta <= sincDownsample1Ratio)
 						v->fSincLUT = fKaiserSinc;
-					else if (delta <= (uintCPUWord_t)(1.5 * MIXER_FRAC_SCALE))
+					else if (delta <= sincDownsample2Ratio)
 						v->fSincLUT = fDownSample1;
 					else
 						v->fSincLUT = fDownSample2;
@@ -403,7 +408,7 @@ void updateVoices(void)
 
 				// set scope delta
 				const double dHz2ScopeDeltaMul = SCOPE_FRAC_SCALE / (double)SCOPE_HZ;
-				v->scopeDelta = (intCPUWord_t)((dHz * dHz2ScopeDeltaMul) + 0.5); // Hz -> fixed-point delta (rounded)
+				v->scopeDelta = (int64_t)((dHz * dHz2ScopeDeltaMul) + 0.5); // Hz -> fixed-point delta (rounded)
 			}
 
 			v->delta = v->oldDelta;
@@ -980,11 +985,7 @@ bool setupAudio(bool showErrorMsg)
 		return false;
 	}
 
-#if CPU_64BIT
 	if (have.freq != 44100 && have.freq != 48000 && have.freq != 96000)
-#else // 32-bit CPUs only support .16fp resampling precision. Not sensible with high rates.
-	if (have.freq != 44100 && have.freq != 48000)
-#endif
 	{
 		if (showErrorMsg)
 			showErrorMsgBox("Couldn't open audio device:\nThis program doesn't support an audio output rate of %dHz. Sorry!", have.freq);

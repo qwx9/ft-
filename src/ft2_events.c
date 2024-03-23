@@ -503,11 +503,20 @@ static void handleSDLEvents(void)
 		else if (event.type == SDL_MOUSEBUTTONUP)
 		{
 			mouseButtonUpHandler(event.button.button);
+#if defined __APPLE__ && defined __aarch64__
+			armMacGhostMouseCursorFix();
+#endif
 		}
 		else if (event.type == SDL_MOUSEBUTTONDOWN)
 		{
 			mouseButtonDownHandler(event.button.button);
 		}
+#if defined __APPLE__ && defined __aarch64__
+		else if (event.type == SDL_MOUSEMOTION)
+		{
+			armMacGhostMouseCursorFix();
+		}
+#endif
 
 		if (editor.throwExit)
 			editor.programRunning = false;
