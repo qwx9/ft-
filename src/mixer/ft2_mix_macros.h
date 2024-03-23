@@ -401,4 +401,3 @@
 		position = (int32_t)(smpPtr - base); \
 	}
 
-#endif

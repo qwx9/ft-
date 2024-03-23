@@ -111,6 +111,7 @@ OFILES=\
 	src/mixer/ft2_mix.$O\
 	src/mixer/ft2_silence_mix.$O\
 	src/mixer/ft2_windowed_sinc.$O\
+	src/modloaders/ft2_load_bem.$O\
 	src/modloaders/ft2_load_digi.$O\
 	src/modloaders/ft2_load_mod.$O\
 	src/modloaders/ft2_load_s3m.$O\
