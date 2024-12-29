@@ -1862,7 +1862,7 @@ void saveRange(void)
 		default: case SMP_SAVE_MODE_WAV: changeFilenameExt(smpEd_SysReqText, ".wav", sizeof (smpEd_SysReqText) - 1); break;
 	}
 
-	UNICHAR *filenameU = cp437ToUnichar(smpEd_SysReqText);
+	UNICHAR *filenameU = cp850ToUnichar(smpEd_SysReqText);
 	if (filenameU == NULL)
 	{
 		okBox(0, "System message", "Not enough memory!", NULL);
@@ -3068,7 +3068,7 @@ static void writeSamplePosLine(void)
 
 	if (editor.curInstr == ins && editor.curSmp == smp)
 	{
-		const int32_t smpPos = getSamplePosition(editor.curSmpChannel);
+		const int32_t smpPos = getSamplePositionFromScopes(editor.curSmpChannel);
 		if (smpPos != -1)
 		{
 			// convert sample position to screen position

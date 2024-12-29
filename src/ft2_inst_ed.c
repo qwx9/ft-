@@ -23,9 +23,9 @@
 #include "ft2_structs.h"
 #include "ft2_bmp.h"
 
-#ifdef _MSC_VER
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct patHdr_t
 {
@@ -55,13 +55,13 @@ typedef struct patWaveHdr_t
 	uint8_t fractions;
 	int32_t sampleLength, loopStart, loopEnd;
 	uint16_t sampleRate;
-	int32_t lowFrq, highFreq, rootFrq;
-	int16_t finetune;
-	uint8_t panning, envRate[6], envOfs[6], tremSweep, tremRate;
+	int32_t lowFreq, highFreq, rootFreq;
+	int16_t tune; // -512 to +512, EXCLUDING 0 cause it is a multiplier. 512 is one octave off, and 1 is a neutral value
+	uint8_t balance, envRate[6], envOfs[6], tremSweep, tremRate;
 	uint8_t tremDepth, vibSweep, vibRate, vibDepth, flags;
-	int16_t junk1;
-	uint16_t junk2;
-	char junk3[36];
+	int16_t scaleFreq;
+	uint16_t scaleFactor;
+	char reserved[36];
 }
 #ifdef __GNUC__
 __attribute__ ((packed))
@@ -475,19 +475,34 @@ static void drawPanning(void)
 
 void drawC4Rate(void)
 {
-	fillRect(465, 299, 71, 8, PAL_DESKTOP);
+	fillRect(472, 299, 64, 8, PAL_DESKTOP);
 
-	int32_t C4Hz = 0;
+	double dC4Hz = 0.0;
 	if (editor.curInstr != 0)
 	{
 		instr_t *ins = instr[editor.curInstr];
 		if (ins != NULL)
-			C4Hz = (int32_t)(getSampleC4Rate(&ins->smp[editor.curSmp]) + 0.5); // rounded
+			dC4Hz = getSampleC4Rate(&ins->smp[editor.curSmp]);
 	}
 
-	char str[64];
-	sprintf(str, "%dHz", C4Hz);
-	textOut(465, 299, PAL_FORGRND, str);
+	if (dC4Hz <= 0.0) // can happen in several cases
+	{
+		textOut(472, 299, PAL_FORGRND, "0Hz");
+		return;
+	}
+
+	// display rate with as many digits as we can fit
+	char str[32];
+	if (dC4Hz < 1000.0)
+		sprintf(str, "%.3fHz", dC4Hz);
+	else if (dC4Hz < 10000.0)
+		sprintf(str, "%.2fHz", dC4Hz);
+	else if (dC4Hz < 100000.0)
+		sprintf(str, "%.1fHz", dC4Hz);
+	else
+		sprintf(str, "%dHz", (int32_t)(dC4Hz + 0.5)); // rounded
+
+	textOut(472, 299, PAL_FORGRND, str);
 }
 
 static void drawFineTune(void)
@@ -1567,15 +1582,15 @@ static void pianoNumberOut(uint16_t xPos, uint16_t yPos, uint8_t fgPalette, uint
 	const uint32_t fg = video.palette[fgPalette];
 	const uint32_t bg = video.palette[bgPalette];
 	uint32_t *dstPtr = &video.frameBuffer[(yPos * SCREEN_W) + xPos];
-	const uint8_t *srcPtr = &bmp.font8[val * 5];
+	const uint8_t *srcPtr = &bmp.font8[val * FONT8_CHAR_W];
 
-	for (int32_t y = 0; y < 7; y++)
+	for (int32_t y = 0; y < FONT8_CHAR_H; y++)
 	{
-		for (int32_t x = 0; x < 5; x++)
+		for (int32_t x = 0; x < FONT8_CHAR_W; x++)
 			dstPtr[x] = srcPtr[x] ? fg : bg;
 
 		dstPtr += SCREEN_W;
-		srcPtr += 80;
+		srcPtr += FONT8_WIDTH;
 	}
 }
 
@@ -2302,7 +2317,7 @@ void showInstEditor(void)
 	textOutShadow(442, 236, PAL_FORGRND, PAL_DSKTOP2, "Vib.speed");
 	textOutShadow(442, 250, PAL_FORGRND, PAL_DSKTOP2, "Vib.depth");
 	textOutShadow(442, 264, PAL_FORGRND, PAL_DSKTOP2, "Vib.sweep");
-	textOutShadow(442, 299, PAL_FORGRND, PAL_DSKTOP2, "C4=");
+	textOutShadow(442, 299, PAL_FORGRND, PAL_DSKTOP2, "C-4=");
 	textOutShadow(537, 299, PAL_FORGRND, PAL_DSKTOP2, "Rel. note");
 
 	showScrollBar(SB_INST_VOL);
@@ -3092,12 +3107,10 @@ void saveInstr(UNICHAR *filenameU, int16_t insNum)
 	SDL_DetachThread(thread);
 }
 
-static int16_t getPATNote(int32_t freq)
+static int16_t getPATNote(uint32_t freq)
 {
-	const double dNote = (log2(freq / 440000.0) * 12.0) + 57.0;
-	const int32_t note = (const int32_t)(dNote + 0.5); // rounded
-
-	return (int16_t)note;
+	const double dNote = (log2((freq / 1000.0) / 440.0) * 12.0) + 9.0;
+	return (int16_t)round(NOTE_C4 + dNote);
 }
 
 static int32_t SDLCALL loadInstrThread(void *ptr)
@@ -3314,8 +3327,8 @@ static int32_t SDLCALL loadInstrThread(void *ptr)
 		{
 			// PAT - Gravis Ultrasound patch
 
-			if (pat_h.numSamples == 0)
-				pat_h.numSamples = 1; // to some patch makers, 0 means 1
+			if (pat_h.numSamples == 0) // 0 samples really means 1 (for quirky .PAT files)
+				pat_h.numSamples = 1;
 
 			if (pat_h.layers > 1 || pat_h.numSamples > MAX_SMP_PER_INST)
 			{
@@ -3375,8 +3388,8 @@ static int32_t SDLCALL loadInstrThread(void *ptr)
 				if (i == 0)
 				{
 					ins->autoVibSweep = patWave_h.vibSweep;
-					ins->autoVibRate = (patWave_h.vibRate + 2) >> 2; // rounded
-					ins->autoVibDepth = (patWave_h.vibDepth + 1) >> 1; // rounded
+					ins->autoVibRate = (patWave_h.vibRate + 1) >> 2;
+					ins->autoVibDepth = (patWave_h.vibDepth+1) >> 1;
 				}
 
 				s = &instr[editor.curInstr]->smp[i];
@@ -3392,7 +3405,7 @@ static int32_t SDLCALL loadInstrThread(void *ptr)
 						s->flags |= LOOP_FWD;
 				}
 
-				s->panning = ((patWave_h.panning << 4) & 0xF0) | (patWave_h.panning & 0xF);
+				s->panning = ((patWave_h.balance << 4) & 0xF0) | (patWave_h.balance & 0xF); // 0..15 -> 0..255
 				s->loopStart = patWave_h.loopStart;
 				s->loopLength = patWave_h.loopEnd - patWave_h.loopStart;
 
@@ -3402,13 +3415,17 @@ static int32_t SDLCALL loadInstrThread(void *ptr)
 					s->loopLength >>= 1;
 				}
 
-				const double dFreq = (1.0 + (patWave_h.finetune / 512.0)) * patWave_h.sampleRate;
-				tuneSample(s, (int32_t)(dFreq + 0.5), audio.linearPeriodsFlag);
+				double dC4Freq = patWave_h.sampleRate;
+				if (patWave_h.scaleFactor > 0)
+				{
+					const double dMidiC4Freq = 261.6255653005986347; // 440*2^(-9/12)
+					const double dRatio = dMidiC4Freq / (patWave_h.rootFreq / 1000.0);
+					dC4Freq *= dRatio;
+				}
 
-				a = getPATNote(patWave_h.rootFrq) - (12 * 3);
-				s->relativeNote -= (uint8_t)a;
+				setSampleC4Hz(s, dC4Freq);
 
-				a = getPATNote(patWave_h.lowFrq);
+				a = getPATNote(patWave_h.lowFreq);
 				b = getPATNote(patWave_h.highFreq);
 
 				a = CLAMP(a, 0, 95);

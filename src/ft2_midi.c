@@ -279,8 +279,10 @@ bool setMidiInputDeviceFromConfig(void)
 {
 	uint32_t i;
 
-	if (midiInDev == NULL || editor.midiConfigFileLocationU == NULL)
+	if (midiInDev == NULL || editor.midiConfigFileLocationU == NULL) {
 		goto setDefMidiInputDev;
+		//midi.inputDeviceName = NULL;
+	}
 
 	const uint32_t numDevices = getNumMidiInDevices();
 	if (numDevices == 0)
@@ -426,7 +428,7 @@ void drawMidiInputList(void)
 					fillRect(114, y, 365, 10, PAL_BOXSLCT); // selection background color
 			}
 
-			char *tmpString = utf8ToCp437(midi.inputDeviceNames[deviceEntry], true);
+			char *tmpString = utf8ToCp850(midi.inputDeviceNames[deviceEntry], true);
 			if (tmpString != NULL)
 			{
 				textOutClipX(114, y, PAL_FORGRND, tmpString, 479);
@@ -487,7 +489,12 @@ bool testMidiInputDeviceListMouseDown(void)
 	closeMidiInDevice();
 	freeMidiIn();
 	initMidiIn();
-	openMidiInDevice(midi.inputDevice);
+	if(!openMidiInDevice(midi.inputDevice)){
+		free(midi.inputDeviceName);
+		midi.inputDeviceName = NULL;
+		midi.inputDevice = -1;
+		return false;
+	}
 
 	drawMidiInputList();
 	return true;

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_replayer_h_
+#define _ft2_replayer_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -47,7 +48,7 @@ enum
 #define C4_FREQ 8363
 #define NOTE_C4 (4*12)
 #define NOTE_OFF 97
-#define MAX_NOTES (10*12*16+16)
+#define MAX_NOTES ((10*12*16)+16)
 #define MAX_PATTERNS 256
 #define MAX_PATT_LEN 256
 #define MAX_INST 128
@@ -57,7 +58,7 @@ enum
 #define INSTR_HEADER_SIZE 263
 #define INSTR_XI_HEADER_SIZE 298
 #define MAX_SAMPLE_LEN 0x3FFFFFFF
-#define FT2_QUICKRAMP_SAMPLES 200
+#define FT2_QUICK_VOLRAMP_MILLISECONDS 5
 #define PROG_NAME_STR "Fasttracker II clone"
 
 enum // sample flags
@@ -88,9 +89,9 @@ enum // envelope flags
 ** absolutely know what you are doing!
 */
 
-#ifdef _MSC_VER
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct xmHdr_t
 {
@@ -194,9 +195,8 @@ note_t;
 
 typedef struct syncedChannel_t // used for audio/video sync queue (pack to save RAM)
 {
-	uint8_t status, pianoNoteNum, smpNum, instrNum;
+	uint8_t status, pianoNoteNum, smpNum, instrNum, scopeVolume;
 	int32_t smpStartPos;
-	uint8_t scopeVolume;
 	uint64_t scopeDelta;
 }
 #ifdef __GNUC__
@@ -204,8 +204,8 @@ __attribute__ ((packed))
 #endif
 syncedChannel_t;
 
-#ifdef _MSC_VER
-#pragma pack(pop)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack off
 #endif
 
 typedef struct sample_t
@@ -256,7 +256,7 @@ typedef struct channel_t
 	uint16_t volEnvTick, panEnvTick, autoVibAmp, autoVibSweep;
 	uint16_t midiVibDepth;
 	int32_t fadeoutVol, fadeoutSpeed;
-	int32_t oldFinalPeriod, smpStartPos;
+	int32_t smpStartPos;
 
 	float fFinalVol, fVolEnvDelta, fPanEnvDelta, fVolEnvValue, fPanEnvValue;
 
@@ -287,10 +287,7 @@ void fixSongName(void);
 void fixInstrAndSampleNames(int16_t insNum);
 
 void calcReplayerVars(int32_t rate);
-
-// used on external sample load and during sample loading in some module formats
-void tuneSample(sample_t *s, const int32_t midCFreq, bool linearPeriodsFlag);
-
+void setSampleC4Hz(sample_t *s, double dC4Hz);
 void calcReplayerLogTab(void); // for linear period -> hz calculation
 
 double dLinearPeriod2Hz(int32_t period);
@@ -356,3 +353,5 @@ extern channel_t channel[MAX_CHANNELS];
 extern song_t song;
 extern instr_t *instr[128+4];
 extern note_t *pattern[MAX_PATTERNS];
+
+#endif

@@ -1,17 +1,20 @@
-#pragma once
+#ifndef _ft2_gfxdata_h_
+#define _ft2_gfxdata_h_
 
 #include <stdint.h>
 
 // ft2_bmp_fonts.c
-extern const uint8_t font1BMP[3712];
+extern const uint8_t buttonGfxBMP[416];
+extern const uint8_t font1BMP[3272];
 extern const uint8_t font2BMP[10060];
 extern const uint8_t font3BMP[584];
 extern const uint8_t font4BMP[13604];
 extern const uint8_t font6BMP[532];
 extern const uint8_t font7BMP[472];
-extern const uint8_t font8BMP[368];
+extern const uint8_t font8BMP[368]; // small font for piano key and Nibbles (snake food number)
 
 // ft2_bmp_logo.c
+extern const uint8_t ft2OldAboutLogoBMP[16112];
 extern const uint8_t ft2AboutLogoBMP[23172];
 extern const uint8_t ft2ByBadgesBMP[1916];
 extern const uint8_t ft2LogoBadgesBMP[6260];
@@ -43,3 +46,5 @@ extern const uint8_t midiLogoBMP[1544];
 // ft2_bmp_gui.c
 extern const uint8_t checkboxGfxBMP[776];
 extern const uint8_t radiobuttonGfxBMP[404];
+
+#endif

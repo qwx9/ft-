@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_audio_h_
+#define _ft2_audio_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -49,7 +50,7 @@ typedef struct audio_t
 
 	uint64_t tickTime64, tickTime64Frac;
 
-	float *fMixBufferL, *fMixBufferR;
+	float *fMixBufferL, *fMixBufferR, fQuickVolRampSamplesMul, fSamplesPerTickIntMul;
 	double dHz2MixDeltaMul;
 
 	SDL_AudioDeviceID dev;
@@ -64,7 +65,7 @@ typedef struct
 	uint8_t mixFuncOffset, panning, loopType, scopeVolume;
 	int32_t position, sampleEnd, loopStart, loopLength, oldPeriod;
 	uint32_t volumeRampLength;
-	uint64_t positionFrac, delta, oldDelta, scopeDelta;
+	uint64_t positionFrac, delta, scopeDelta;
 
 	// if (loopEnabled && hasLooped && samplingPos <= loopStart+MAX_LEFT_TAPS) readFixedTapsFromThisPointer();
 	const int8_t *leftEdgeTaps8;
@@ -74,9 +75,9 @@ typedef struct
 	float fVolume, fCurrVolumeL, fCurrVolumeR, fVolumeLDelta, fVolumeRDelta, fTargetVolumeL, fTargetVolumeR;
 } voice_t;
 
-#ifdef _MSC_VER
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct pattSyncData_t // used for audio/video sync queue (pack to save RAM)
 {
@@ -87,8 +88,8 @@ typedef struct pattSyncData_t // used for audio/video sync queue (pack to save R
 __attribute__ ((packed))
 #endif
 pattSyncData_t;
-#ifdef _MSC_VER
-#pragma pack(pop)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack off
 #endif
 
 typedef struct pattSync_t
@@ -109,7 +110,6 @@ typedef struct chSync_t
 	chSyncData_t data[SYNC_QUEUE_LEN+1];
 } chSync_t;
 
-void resetCachedMixerVars(void);
 int32_t pattQueueReadSize(void);
 int32_t pattQueueWriteSize(void);
 bool pattQueuePush(pattSyncData_t t);
@@ -157,3 +157,5 @@ extern chSync_t chSync;
 extern pattSync_t pattSync;
 
 extern volatile bool pattQueueClearing, chQueueClearing;
+
+#endif

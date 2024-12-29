@@ -13,9 +13,9 @@
 #include "../ft2_tables.h"
 #include "../ft2_sysreqs.h"
 
-#ifdef _MSC_VER // please don't mess with these structs!
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__) // please don't mess with these structs!
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct s3mSmpHdr_t
 {
@@ -47,8 +47,8 @@ typedef struct s3mHdr_t
 __attribute__ ((packed))
 #endif
 s3mHdr_t;
-#ifdef _MSC_VER
-#pragma pack(pop)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack off
 #endif
 
 static uint8_t pattBuff[12288];
@@ -283,10 +283,9 @@ bool loadS3M(FILE *f, uint32_t filesize)
 							case 1: // A
 							{
 								tmpNote.efx = 0xF;
-								if (tmpNote.efxData == 0)
+								if (tmpNote.efxData == 0) // A00 does nothing in ST3
 								{
-									tmpNote.efx = 0;
-									tmpNote.efxData = 0;
+									tmpNote.efx = tmpNote.efxData = 0;
 								}
 								else if (tmpNote.efxData > 0x1F)
 								{
@@ -331,7 +330,7 @@ bool loadS3M(FILE *f, uint32_t filesize)
 
 									tmpNote.efxData &= 0x0F;
 
-									if (tmpNote.efx == 0x05)
+									if (tmpNote.efx == 5)
 										tmpNote.efxData |= 0x20;
 									else
 										tmpNote.efxData |= 0x10;
@@ -353,7 +352,7 @@ bool loadS3M(FILE *f, uint32_t filesize)
 
 							case 7: // G
 							{
-								tmpNote.efx = 0x03;
+								tmpNote.efx = 3;
 
 								// fix illegal slides (to new instruments)
 								if (tmpNote.instr != 0 && tmpNote.instr != s3mLastGInstr[ii])
@@ -383,15 +382,15 @@ bool loadS3M(FILE *f, uint32_t filesize)
 								}
 								else
 								{
-									tmpNote.efx = 0x6;
+									tmpNote.efx = 6;
 									if (tmpNote.efxData & 0x0F) // on D/K, last nybble has first priority in ST3
 										tmpNote.efxData &= 0x0F;
 								}
 							}
 							break;
 
-							case 8: tmpNote.efx = 0x04; break; // H
-							case 9: tmpNote.efx = 0x1D; break; // I
+							case 8:  tmpNote.efx = 0x04; break; // H
+							case 9:  tmpNote.efx = 0x1D; break; // I
 							case 10: tmpNote.efx = 0x00; break; // J
 							case 12: tmpNote.efx = 0x05; break; // L
 							case 15: tmpNote.efx = 0x09; break; // O
@@ -408,7 +407,11 @@ bool loadS3M(FILE *f, uint32_t filesize)
 								else if (tmp == 0x2) tmpNote.efxData |= 0x50;
 								else if (tmp == 0x3) tmpNote.efxData |= 0x40;
 								else if (tmp == 0x4) tmpNote.efxData |= 0x70;
-								// ignore S8x becuase it's not compatible with FT2 panning
+								else if (tmp == 0x8)
+								{
+									tmpNote.efx = 8;
+									tmpNote.efxData = ((tmpNote.efxData & 0x0F) << 4) | (tmpNote.efxData & 0x0F);
+								}
 								else if (tmp == 0xB) tmpNote.efxData |= 0x60;
 								else if (tmp == 0xC) // Note Cut
 								{
@@ -416,8 +419,7 @@ bool loadS3M(FILE *f, uint32_t filesize)
 									if (tmpNote.efxData == 0xC0)
 									{
 										// EC0 does nothing in ST3 but cuts voice in FT2, remove effect
-										tmpNote.efx = 0;
-										tmpNote.efxData = 0;
+										tmpNote.efx = tmpNote.efxData = 0;
 									}
 								}
 								else if (tmp == 0xD) // Note Delay
@@ -426,8 +428,7 @@ bool loadS3M(FILE *f, uint32_t filesize)
 									if (tmpNote.note == 0 || tmpNote.note == NOTE_OFF)
 									{
 										// EDx without a note does nothing in ST3 but retrigs in FT2, remove effect
-										tmpNote.efx = 0;
-										tmpNote.efxData = 0;
+										tmpNote.efx = tmpNote.efxData = 0;
 									}
 									else if (tmpNote.efxData == 0xD0)
 									{
@@ -443,15 +444,14 @@ bool loadS3M(FILE *f, uint32_t filesize)
 								else if (tmp == 0xF) tmpNote.efxData |= 0xF0;
 								else
 								{
-									tmpNote.efx = 0;
-									tmpNote.efxData = 0;
+									tmpNote.efx = tmpNote.efxData = 0;
 								}
 							}
 							break;
 
 							case 20: // T
 							{
-								tmpNote.efx = 0x0F;
+								tmpNote.efx = 0xF;
 								if (tmpNote.efxData < 0x21) // Txx with a value lower than 33 (0x21) does nothing in ST3, remove effect
 								{
 									tmpNote.efx = 0;
@@ -462,26 +462,39 @@ bool loadS3M(FILE *f, uint32_t filesize)
 
 							case 22: // V
 							{
-								tmpNote.efx = 0x10;
-								if (tmpNote.efxData > 0x40)
+								if (tmpNote.efxData > 0x40) // Vxx > 0x40 does nothing in ST3
+									tmpNote.efx = tmpNote.efxData = 0;
+								else
+									tmpNote.efx = 0x10;
+							}
+							break;
+
+							case 24: // X (set 7-bit panning + surround)
+							{
+								if (tmpNote.efxData > 0x80)
 								{
-									// Vxx > 0x40 does nothing in ST3
-									tmpNote.efx = 0;
-									tmpNote.efxData = 0;
+									tmpNote.efx = tmpNote.efxData = 0;
+								}
+								else
+								{
+									tmpNote.efx = 8;
+
+									int32_t pan = tmpNote.efxData * 2;
+									if (pan > 255)
+										pan = 255;
+
+									tmpNote.efxData = (uint8_t)pan;
 								}
 							}
 							break;
 
 							default:
-							{
-								tmpNote.efx = 0;
-								tmpNote.efxData = 0;
-							}
+								tmpNote.efx = tmpNote.efxData = 0;
 							break;
 						}
 					}
 
-					if (tmpNote.instr != 0 && tmpNote.efx != 0x3)
+					if (tmpNote.instr != 0 && tmpNote.efx != 3)
 						s3mLastGInstr[ii] = tmpNote.instr;
 
 					patternTmp[i][(kk * MAX_CHANNELS) + ii] = tmpNote;
@@ -563,7 +576,7 @@ bool loadS3M(FILE *f, uint32_t filesize)
 				s->loopStart = smpHdr.loopStart;
 				s->loopLength = smpHdr.loopEnd - smpHdr.loopStart;
 
-				tuneSample(s, smpHdr.midCFreq, tmpLinearPeriodsFlag);
+				setSampleC4Hz(s, smpHdr.midCFreq);
 
 				if (sample16Bit)
 				{

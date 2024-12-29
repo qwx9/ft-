@@ -1,8 +1,24 @@
-#pragma once
+#ifndef _ft2_mix_h_
+#define _ft2_mix_h_
 
 #include <stdint.h>
 
+enum
+{
+	// don't change the order of these! (yes, it looks weird)
+	INTERPOLATION_DISABLED = 0,
+	INTERPOLATION_SINC8    = 1,
+	INTERPOLATION_LINEAR   = 2,
+	INTERPOLATION_SINC16   = 3,
+	INTERPOLATION_CUBIC4   = 4,
+	INTERPOLATION_CUBIC6   = 5,
+	// ------
+
+	NUM_INTERPOLATORS,
+};
+
 #define MAX_TAPS 16
+
 #define MAX_LEFT_TAPS ((MAX_TAPS/2)-1)
 #define MAX_RIGHT_TAPS (MAX_TAPS/2)
 
@@ -15,3 +31,5 @@
 typedef void (*mixFunc)(void *, uint32_t, uint32_t);
 
 extern const mixFunc mixFuncTab[]; // ft2_mix.c
+
+#endif

@@ -23,6 +23,7 @@
 #include "ft2_sample_ed.h"
 #include "ft2_diskop.h"
 #include "scopes/ft2_scopes.h"
+#include "scopes/ft2_scopedraw.h"
 #include "ft2_about.h"
 #include "ft2_pattern_ed.h"
 #include "ft2_module_loader.h"
@@ -89,12 +90,13 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	// ALT+F4 is used in FT2, but is "close program" in some cases...
+	// ALT+F4 is used in FT2, but is "close program" in Windows...
 #if SDL_MINOR_VERSION >= 24 || (SDL_MINOR_VERSION == 0 && SDL_PATCHLEVEL >= 4)
 	SDL_SetHint("SDL_WINDOWS_NO_CLOSE_ON_ALT_F4", "1");
 #endif
 
 #ifdef _WIN32
+
 #ifndef _MSC_VER
 	SetProcessDPIAware();
 #endif
@@ -146,7 +148,7 @@ int main(int argc, char *argv[])
 #ifdef __APPLE__
 	osxSetDirToProgramDirFromArgs(argv);
 #endif
-	if (!setupExecutablePath() || !loadBMPs() || !calcCubicSplineTable() || !calcWindowedSincTables())
+	if (!setupExecutablePath() || !loadBMPs() || !calcCubicSplineTables() || !calcWindowedSincTables())
 	{
 		cleanUpAndExit();
 		return 1;
@@ -205,7 +207,6 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	initAboutScreen();
 	pauseAudio();
 	resumeAudio();
 	rescanAudioDevices();
@@ -367,6 +368,7 @@ static void cleanUpAndExit(void) // never call this inside the main loop!
 	freeTextBoxes();
 	freeMouseCursors();
 	freeBMPs();
+	freeScopeIntrpLUT();
 
 	if (editor.audioDevConfigFileLocationU != NULL)
 	{

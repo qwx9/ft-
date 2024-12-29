@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_gui_h_
+#define _ft2_gui_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -31,6 +32,9 @@
 #define FONT7_CHAR_W 6
 #define FONT7_CHAR_H 7
 #define FONT7_WIDTH 140
+#define FONT8_WIDTH 80
+#define FONT8_CHAR_W 5
+#define FONT8_CHAR_H 7
 
 enum
 {
@@ -117,3 +121,5 @@ void hideTopLeftScreen(void);
 void hideTopScreen(void);
 void showTopScreen(bool restoreScreens);
 void showBottomScreen(void);
+
+#endif

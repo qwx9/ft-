@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_config_h_
+#define _ft2_config_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -19,14 +20,6 @@ enum
 
 	CONFIG_HIDE_ERRORS = 0,
 	CONFIG_SHOW_ERRORS = 1,
-
-	// don't change the order of these! (yes, it looks off)
-	INTERPOLATION_DISABLED = 0,
-	INTERPOLATION_SINC8 = 1,
-	INTERPOLATION_LINEAR = 2,
-	INTERPOLATION_SINC16 = 3,
-	INTERPOLATION_CUBIC = 4,
-	// ------
 
 	MOUSE_IDLE_SHAPE_NICE = 0,
 	MOUSE_IDLE_SHAPE_UGLY = 1,
@@ -55,21 +48,13 @@ enum
 	PAL_JUNGLE = 5,
 	PAL_LITHE_DARK = 6,
 	PAL_ROSE = 7,
-	PAL_DARK_MODE = 8,
+	PAL_DARK_MODE = 8, // default
 	PAL_VIOLENT = 9,
-	PAL_WHY_COLORS = 10, // default
+	PAL_WHY_COLORS = 10,
 	PAL_USER_DEFINED = 11,
 
 	FILESORT_EXT = 0,
 	FILESORT_NAME = 1,
-
-	ONE_PLAYER = 0,
-	TWO_PLAYERS = 1,
-
-	DIFFICULTY_NOVICE = 0,
-	DIFFICULTY_AVERAGE = 1,
-	DIFFICULTY_PRO = 2,
-	DIFFICULTY_MANIAC = 3,
 
 	DONT_SHOW_IMPORT_WARNING_FLAG = 64,
 	DONT_SHOW_NOT_YET_APPLIED_WARNING_FLAG = 32,
@@ -101,9 +86,9 @@ enum
 	START_IN_FULLSCR = 128,
 };
 
-#ifdef _MSC_VER
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct highScoreType_t
 {
@@ -140,7 +125,7 @@ typedef struct config_t // exact FT2.CFG layout (with some modifications)
 	int16_t recMIDITranspVal;
 	uint8_t recMIDIVelocity, recMIDIAftert;
 	int16_t recMIDIVolSens;
-	uint8_t recMIDIAllowPC, smpCutToBuffer, ptnCutToBuffer, killNotesOnStopPlay;
+	uint8_t useNewAboutScreen, smpCutToBuffer, ptnCutToBuffer, killNotesOnStopPlay;
 	uint8_t specialFlags; // was lo-byte of "ptnDefaultLen" (never used in FT2)
 	uint8_t windowFlags; // was hi-byte of "ptnDefaultLen" (never used in FT2)
 	uint8_t modulesPathLen;
@@ -178,8 +163,8 @@ __attribute__ ((packed))
 #endif
 config_t;
 
-#ifdef _MSC_VER
-#pragma pack(pop)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack off
 #endif
 
 void resetConfig(void);
@@ -221,9 +206,10 @@ void rbConfigAudio16Bit(void);
 void rbConfigAudio32BitFloat(void);
 void rbConfigAudioIntrpDisabled(void);
 void rbConfigAudioIntrpLinear(void);
-void rbConfigAudioIntrpCubic(void);
-void rbConfigAudioIntrp8PointSinc(void);
-void rbConfigAudioIntrp16PointSinc(void);
+void rbConfigAudioIntrpCubic4(void);
+void rbConfigAudioIntrpCubic6(void);
+void rbConfigAudioIntrpSinc8(void);
+void rbConfigAudioIntrpSinc16(void);
 void rbConfigAudio44kHz(void);
 void rbConfigAudio48kHz(void);
 void rbConfigAudio96kHz(void);
@@ -277,7 +263,7 @@ void cbMultiChanEdit(void);
 void cbRecKeyOff(void);
 void cbQuantization(void);
 void cbChangePattLenInsDel(void);
-void cbMIDIAllowPC(void);
+void cbUseOldAboutScreen(void);
 void cbMIDIEnable(void);
 void cbMIDIRecTransp(void);
 void cbMIDIRecAllChn(void);
@@ -292,3 +278,5 @@ void sbMasterVol(uint32_t pos);
 void sbMIDISens(uint32_t pos);
 
 extern config_t config;
+
+#endif

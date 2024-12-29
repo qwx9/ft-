@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_radiobuttons_h_
+#define _ft2_radiobuttons_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -19,7 +20,7 @@ enum // RADIOBUTTONS
 	RB_NIBBLES_NOVICE,
 	RB_NIBBLES_AVERAGE,
 	RB_NIBBLES_PRO,
-	RB_NIBBLES_MANIAC,
+	RB_NIBBLES_TRITON,
 
 	// SAMPLER
 	RB_SAMPLE_NO_LOOP,
@@ -57,7 +58,8 @@ enum // RADIOBUTTONS
 	// AUDIO INTERPOLATION
 	RB_CONFIG_AUDIO_INTRP_DISABLED,
 	RB_CONFIG_AUDIO_INTRP_LINEAR,
-	RB_CONFIG_AUDIO_INTRP_CUBIC,
+	RB_CONFIG_AUDIO_INTRP_CUBIC4,
+	RB_CONFIG_AUDIO_INTRP_CUBIC6,
 	RB_CONFIG_AUDIO_INTRP_SINC8,
 	RB_CONFIG_AUDIO_INTRP_SINC16,
 
@@ -230,3 +232,5 @@ void hideRadioButtonGroup(uint16_t radioButtonGroup);
 void handleRadioButtonsWhileMouseDown(void);
 bool testRadioButtonMouseDown(void);
 void testRadioButtonMouseRelease(void);
+
+#endif

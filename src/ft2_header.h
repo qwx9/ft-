@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_header_h_
+#define _ft2_header_h_
 
 #include <SDL2/SDL.h>
 #include <stdint.h>
@@ -12,7 +13,7 @@
 #endif
 #include "ft2_replayer.h"
 
-#define PROG_VER_STR "1.86"
+#define PROG_VER_STR "1.94"
 
 // do NOT change these! It will only mess things up...
 
@@ -23,12 +24,6 @@
 
 // 70Hz (FT2 vblank) delta -> 60Hz vblank delta (rounded)
 #define SCALE_VBLANK_DELTA(x) (int32_t)(((x) * ((double)VBLANK_HZ / FT2_VBLANK_HZ)) + 0.5)
-
-/* Scopes must be clocked slightly higher than the nominal vblank rate
-** to prevent update/draw racing issues. Setting it too high will
-** cause more issues!
-*/
-#define SCOPE_HZ 64
 
 /* Amount of extra bytes to allocate for every instrument sample,
 ** this is used for a hack for resampling interpolation to be
@@ -45,6 +40,10 @@
 #else
 #define DIR_DELIMITER '\\'
 #define PATH_MAX MAX_PATH
+#endif
+
+#ifndef PI
+#define PI 3.14159265358979323846264338327950288
 #endif
 
 #define SGN(x) (((x) >= 0) ? 1 : -1)
@@ -97,3 +96,5 @@ typedef struct smpPtr_t
 {
 	int8_t *origPtr, *ptr;
 } smpPtr_t;
+
+#endif

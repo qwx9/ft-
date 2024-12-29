@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdint.h>
 #include "../ft2_audio.h"
 
@@ -39,6 +40,8 @@ void silenceMixRoutine(voice_t *v, int32_t numSamples)
 	{
 		if (v->loopLength >= 2)
 		{
+			// wrap as forward loop (position is inverted if sampling backwards, when needed)
+
 			const uint32_t overflow = position - v->sampleEnd;
 			const uint32_t cycles = overflow / v->loopLength;
 			const uint32_t phase = overflow % v->loopLength;

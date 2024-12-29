@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_checkboxes_h_
+#define _ft2_checkboxes_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -79,7 +80,7 @@ enum // CHECKBOXES
 	CB_CONF_REC_KEYOFF,
 	CB_CONF_QUANTIZATION,
 	CB_CONF_CHANGE_PATTLEN_INS_DEL,
-	CB_CONF_MIDI_ALLOW_PC,
+	CB_CONF_USE_OLD_ABOUT_SCREEN,
 	CB_CONF_MIDI_ENABLE,
 	CB_CONF_MIDI_REC_ALL,
 	CB_CONF_MIDI_REC_TRANS,
@@ -120,3 +121,5 @@ void hideCheckBox(uint16_t checkBoxID);
 void handleCheckBoxesWhileMouseDown(void);
 bool testCheckBoxMouseDown(void);
 void testCheckBoxMouseRelease(void);
+
+#endif

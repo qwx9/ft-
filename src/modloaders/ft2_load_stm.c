@@ -13,9 +13,9 @@
 #include "../ft2_tables.h"
 #include "../ft2_sysreqs.h"
 
-#ifdef _MSC_VER // please don't mess with these structs!
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__) // please don't mess with these structs!
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct stmSmpHdr_t
 {
@@ -45,8 +45,8 @@ typedef struct stmHdr_t
 __attribute__ ((packed))
 #endif
 stmHdr_t;
-#ifdef _MSC_VER
-#pragma pack(pop)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack off
 #endif
 
 static const uint8_t stmEfx[16] = { 0, 0, 11, 0, 10, 2, 1, 3, 4, 7, 0, 5, 6, 0, 0, 0 };
@@ -212,7 +212,7 @@ bool loadSTM(FILE *f, uint32_t filesize)
 			s->loopLength = hdr.smp[i].loopEnd - hdr.smp[i].loopStart;
 
 			memcpy(s->name, hdr.smp[i].name, 12);
-			tuneSample(s, hdr.smp[i].midCFreq, tmpLinearPeriodsFlag);
+			setSampleC4Hz(s, hdr.smp[i].midCFreq);
 
 			if (s->loopStart < s->length && hdr.smp[i].loopEnd > s->loopStart && hdr.smp[i].loopEnd != 0xFFFF)
 			{

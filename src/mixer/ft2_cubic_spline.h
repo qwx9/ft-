@@ -4,18 +4,16 @@
 #include <stdbool.h>
 #include "ft2_mix.h" // MIXER_FRAC_BITS
 
-#define CUBIC_SPLINE_TAPS 4
-#define CUBIC_SPLINE_WIDTH_BITS 2 // log2(CUBIC_SPLINE_TAPS)
+#define CUBIC4P_SPLINE_PHASES 8192
+#define CUBIC4P_SPLINE_PHASES_BITS 13 // log2(CUBIC4P_SPLINE_PHASES)
+#define CUBIC4P_SPLINE_FSHIFT (MIXER_FRAC_BITS-(CUBIC4P_SPLINE_PHASES_BITS+2))
+#define CUBIC4P_SPLINE_FMASK ((4*CUBIC4P_SPLINE_PHASES)-4)
 
-// 8192 is a good compromise
-#define CUBIC_SPLINE_PHASES 8192
-#define CUBIC_SPLINE_PHASES_BITS 13 // log2(CUBIC_SPLINE_PHASES)
+#define CUBIC6P_SPLINE_PHASES 8192
+#define CUBIC6P_SPLINE_PHASES_BITS 13 // log2(CUBIC6P_SPLINE_PHASES)
+#define CUBIC6P_SPLINE_FSHIFT (MIXER_FRAC_BITS-CUBIC6P_SPLINE_PHASES_BITS)
 
-// do not change these!
-#define CUBIC_SPLINE_FSHIFT (MIXER_FRAC_BITS-(CUBIC_SPLINE_PHASES_BITS+CUBIC_SPLINE_WIDTH_BITS))
-#define CUBIC_SPLINE_FMASK ((CUBIC_SPLINE_TAPS*CUBIC_SPLINE_PHASES)-CUBIC_SPLINE_TAPS)
+extern float *f4PointCubicSplineLUT, *f6PointCubicSplineLUT;
 
-extern float *fCubicSplineLUT;
-
-bool calcCubicSplineTable(void);
-void freeCubicSplineTable(void);
+bool calcCubicSplineTables(void);
+void freeCubicSplineTables(void);

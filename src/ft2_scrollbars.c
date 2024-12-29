@@ -87,8 +87,8 @@ scrollBar_t scrollBars[NUM_SCROLLBARS] =
 	//x,   y,   w,  h,  type,                 style                         funcOnDown
 	{ 365,  29, 18, 43, SCROLLBAR_VERTICAL,   SCROLLBAR_DYNAMIC_THUMB_SIZE, sbAudOutputSetPos },
 	{ 365, 116, 18, 21, SCROLLBAR_VERTICAL,   SCROLLBAR_DYNAMIC_THUMB_SIZE, sbAudInputSetPos },
-	{ 529, 117, 79, 13, SCROLLBAR_HORIZONTAL, SCROLLBAR_FIXED_THUMB_SIZE,   sbAmp },
-	{ 529, 143, 79, 13, SCROLLBAR_HORIZONTAL, SCROLLBAR_FIXED_THUMB_SIZE,   sbMasterVol },
+	{ 533, 117, 75, 13, SCROLLBAR_HORIZONTAL, SCROLLBAR_FIXED_THUMB_SIZE,   sbAmp },
+	{ 533, 143, 75, 13, SCROLLBAR_HORIZONTAL, SCROLLBAR_FIXED_THUMB_SIZE,   sbMasterVol },
 
 	// ------ CONFIG LAYOUT SCROLLBARS ------
 	//x,   y,  w,  h,  type,                 style                       funcOnDown
@@ -252,7 +252,7 @@ static void setScrollBarThumbCoords(uint16_t scrollBarID)
 		}
 
 		// prevent scrollbar thumb coords from being outside of the scrollbar area
-		thumbX = CLAMP(thumbX, scrollBar->x, scrollEnd-1);
+		thumbX = CLAMP((int)thumbX, (int)scrollBar->x, (int)scrollEnd-1);
 		if (thumbX+thumbW > scrollEnd)
 			thumbW = scrollEnd - thumbX;
 	}
@@ -294,7 +294,7 @@ static void setScrollBarThumbCoords(uint16_t scrollBarID)
 		}
 
 		// prevent scrollbar thumb coords from being outside of the scrollbar area
-		thumbY = CLAMP(thumbY, scrollBar->y, scrollEnd - 1);
+		thumbY = CLAMP((int)thumbY, (int)scrollBar->y, (int)scrollEnd - 1);
 		if (thumbY+thumbH > scrollEnd)
 			thumbH = scrollEnd - thumbY;
 	}
@@ -519,7 +519,7 @@ bool testScrollBarMouseDown(void)
 
 					scrollPos = mouse.x - scrollBias - scrollBar->x;
 					assert(scrollBar->w > 0);
-					scrollPos = CLAMP(scrollPos, 0, scrollBar->w);
+					scrollPos = CLAMP((int)scrollPos, 0, (int)scrollBar->w);
 
 					if (scrollBar->thumbType == SCROLLBAR_FIXED_THUMB_SIZE)
 						length = scrollBar->w - scrollBar->thumbW;
@@ -556,7 +556,7 @@ bool testScrollBarMouseDown(void)
 					scrollPos = mouse.y - scrollBias - scrollBar->y;
 
 					assert(scrollBar->h > 0);
-					scrollPos = CLAMP(scrollPos, 0, scrollBar->h);
+					scrollPos = CLAMP((int)scrollPos, 0, (int)scrollBar->h);
 
 					length = scrollBar->h + (scrollBar->originalThumbSize - scrollBar->thumbH);
 					if (length < 1)

@@ -1,7 +1,9 @@
-#pragma once
+#ifndef _ft2_audioselector_h_
+#define _ft2_audioselector_h_
 
 #include <stdint.h>
 
+#define DEFAULT_AUDIO_DEV_STR "(Default Audio Device)"
 #define AUDIO_SELECTORS_BOX_WIDTH 247
 
 void setToDefaultAudioOutputDevice(void);
@@ -19,3 +21,5 @@ void sbAudOutputSetPos(uint32_t pos);
 void sbAudInputSetPos(uint32_t pos);
 void freeAudioDeviceLists(void);
 void freeAudioDeviceSelectorBuffers(void);
+
+#endif
