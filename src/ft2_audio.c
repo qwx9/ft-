@@ -192,17 +192,17 @@ void audioSetInterpolationType(uint8_t interpolationType)
 	// set sinc LUT pointers
 	if (config.interpolation == INTERPOLATION_SINC8)
 	{
-		fKaiserSinc = fKaiserSinc_8;
-		fDownSample1 = fDownSample1_8;
-		fDownSample2 = fDownSample2_8;
+		fSinc_1 = fSinc8_1;
+		fSinc_2 = fSinc8_2;
+		fSinc_3 = fSinc8_3;
 
 		audio.sincInterpolation = true;
 	}
 	else if (config.interpolation == INTERPOLATION_SINC16)
 	{
-		fKaiserSinc = fKaiserSinc_16;
-		fDownSample1 = fDownSample1_16;
-		fDownSample2 = fDownSample2_16;
+		fSinc_1 = fSinc16_1;
+		fSinc_2 = fSinc16_2;
+		fSinc_3 = fSinc16_3;
 
 		audio.sincInterpolation = true;
 	}
@@ -368,11 +368,8 @@ void updateVoices(void)
 
 		if (status & IS_Vol)
 		{
-			v->fVolume = ch->fFinalVol;
-
-			// set scope volume (scaled)
-			const int32_t scopeVolume = (int32_t)((ch->fFinalVol * (SCOPE_HEIGHT*(1<<2))) + 0.5f); // rounded
-			v->scopeVolume = (uint8_t)scopeVolume;
+			v->fVolume = ch->fFinalVol; // 0.0f .. 1.0f
+			v->scopeVolume = (uint8_t)((ch->fFinalVol * 255.0f) + 0.5f); // 0..255, rounded
 		}
 
 		if (status & IS_Pan)
@@ -387,20 +384,15 @@ void updateVoices(void)
 
 			// set voice delta
 			v->delta = (int64_t)((dVoiceHz * audio.dHz2MixDeltaMul) + 0.5); // Hz -> fixed-point delta (rounded)
-
-			// set scope delta
-			const double dHz2ScopeDeltaMul = SCOPE_FRAC_SCALE / (double)SCOPE_HZ;
-			v->scopeDelta = (int64_t)((dVoiceHz * dHz2ScopeDeltaMul) + 0.5); // Hz -> fixed-point delta (rounded)
-
 			if (audio.sincInterpolation)
 			{
 				// decide which sinc LUT to use according to the resampling ratio
-				if (v->delta <= sincDownsample1Ratio)
-					v->fSincLUT = fKaiserSinc;
-				else if (v->delta <= sincDownsample2Ratio)
-					v->fSincLUT = fDownSample1;
+				if (v->delta <= sincRatio1)
+					v->fSincLUT = fSinc_1;
+				else if (v->delta <= sincRatio2)
+					v->fSincLUT = fSinc_2;
 				else
-					v->fSincLUT = fDownSample2;
+					v->fSincLUT = fSinc_3;
 			}
 		}
 
@@ -772,14 +764,14 @@ static void fillVisualsSyncBuffer(void)
 	for (int32_t i = 0; i < song.numChannels; i++, c++, s++, v++)
 	{
 		c->scopeVolume = v->scopeVolume;
-		c->scopeDelta = v->scopeDelta;
+		c->period = s->finalPeriod;
 		c->instrNum = s->instrNum;
 		c->smpNum = s->smpNum;
 		c->status = s->tmpStatus;
 		c->smpStartPos = s->smpStartPos;
 
 		c->pianoNoteNum = 255; // no piano key
-		if (songPlaying && (c->status & IS_Period) && !s->keyOff)
+		if (songPlaying && ui.instEditorShown && (c->status & IS_Period) && !s->keyOff)
 		{
 			const int32_t note = getPianoKey(s->finalPeriod, s->finetune, s->relativeNote);
 			if (note >= 0 && note <= 95)

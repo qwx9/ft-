@@ -51,6 +51,7 @@ HFILES=\
 	src/mixer/ft2_cubic_spline.h\
 	src/mixer/ft2_mix.h\
 	src/mixer/ft2_mix_macros.h\
+	src/mixer/ft2_quadratic_spline.h\
 	src/mixer/ft2_silence_mix.h\
 	src/mixer/ft2_windowed_sinc.h\
 	src/scopes/ft2_scope_macros.h\
@@ -109,6 +110,7 @@ OFILES=\
 	src/gfxdata/ft2_bmp_scopes.$O\
 	src/mixer/ft2_cubic_spline.$O\
 	src/mixer/ft2_mix.$O\
+	src/mixer/ft2_quadratic_spline.$O\
 	src/mixer/ft2_silence_mix.$O\
 	src/mixer/ft2_windowed_sinc.$O\
 	src/modloaders/ft2_load_bem.$O\

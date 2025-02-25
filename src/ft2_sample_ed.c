@@ -1495,7 +1495,11 @@ void updateSampleEditor(void)
 
 	// draw sample play note
 
-	const uint8_t note = (editor.smpEd_NoteNr - 1) % 12;
+	const uint32_t noteNr = editor.smpEd_NoteNr - 1;
+
+	const uint32_t note   = noteNr % 12;
+	const uint32_t octave = noteNr / 12;
+
 	if (config.ptnAcc == 0)
 	{
 		noteChar1 = sharpNote1Char[note];
@@ -1507,11 +1511,9 @@ void updateSampleEditor(void)
 		noteChar2 = flatNote2Char[note];
 	}
 
-	char octaChar = '0' + ((editor.smpEd_NoteNr - 1) / 12);
-
 	charOutBg(7,  369, PAL_FORGRND, PAL_BCKGRND, noteChar1);
 	charOutBg(15, 369, PAL_FORGRND, PAL_BCKGRND, noteChar2);
-	charOutBg(23, 369, PAL_FORGRND, PAL_BCKGRND, octaChar);
+	charOutBg(23, 369, PAL_FORGRND, PAL_BCKGRND, (char)('0' + octave));
 
 	// draw sample display/length
 
@@ -1539,7 +1541,7 @@ void sampPlayNoteDown(void)
 
 void scrollSampleDataLeft(void)
 {
-	int32_t scrollAmount, sampleLen;
+	int32_t sampleLen;
 
 	if (instr[editor.curInstr] == NULL)
 		sampleLen = 0;
@@ -1549,11 +1551,7 @@ void scrollSampleDataLeft(void)
 	if (smpEd_ViewSize == 0 || smpEd_ViewSize == sampleLen)
 		return;
 
-	if (mouse.rightButtonPressed)
-		scrollAmount = smpEd_ViewSize / SCALE_VBLANK_DELTA(16);
-	else
-		scrollAmount = smpEd_ViewSize / SCALE_VBLANK_DELTA(32);
-
+	int32_t scrollAmount = (uint32_t)smpEd_ViewSize / 32;
 	if (scrollAmount < 1)
 		scrollAmount = 1;
 
@@ -1566,7 +1564,7 @@ void scrollSampleDataLeft(void)
 
 void scrollSampleDataRight(void)
 {
-	int32_t scrollAmount, sampleLen;
+	int32_t sampleLen;
 
 	if (instr[editor.curInstr] == NULL)
 		sampleLen = 0;
@@ -1576,11 +1574,7 @@ void scrollSampleDataRight(void)
 	if (smpEd_ViewSize == 0 || smpEd_ViewSize == sampleLen)
 		return;
 
-	if (mouse.rightButtonPressed)
-		scrollAmount = smpEd_ViewSize / SCALE_VBLANK_DELTA(16);
-	else
-		scrollAmount = smpEd_ViewSize / SCALE_VBLANK_DELTA(32);
-
+	int32_t scrollAmount = (uint32_t)smpEd_ViewSize / 32;
 	if (scrollAmount < 1)
 		scrollAmount = 1;
 
