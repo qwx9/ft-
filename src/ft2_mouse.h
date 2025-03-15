@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_mouse_h_
+#define _ft2_mouse_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -52,3 +53,5 @@ void animateBusyMouse(void);
 void handleLastGUIObjectDown(void);
 void readMouseXY(void);
 void resetMouseBusyAnimation(void);
+
+#endif

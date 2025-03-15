@@ -252,7 +252,7 @@ static void setScrollBarThumbCoords(uint16_t scrollBarID)
 		}
 
 		// prevent scrollbar thumb coords from being outside of the scrollbar area
-		thumbX = CLAMP(thumbX, scrollBar->x, scrollEnd-1);
+		thumbX = CLAMP((int)thumbX, (int)scrollBar->x, (int)scrollEnd-1);
 		if (thumbX+thumbW > scrollEnd)
 			thumbW = scrollEnd - thumbX;
 	}
@@ -294,7 +294,7 @@ static void setScrollBarThumbCoords(uint16_t scrollBarID)
 		}
 
 		// prevent scrollbar thumb coords from being outside of the scrollbar area
-		thumbY = CLAMP(thumbY, scrollBar->y, scrollEnd - 1);
+		thumbY = CLAMP((int)thumbY, (int)scrollBar->y, (int)scrollEnd - 1);
 		if (thumbY+thumbH > scrollEnd)
 			thumbH = scrollEnd - thumbY;
 	}
@@ -519,7 +519,7 @@ bool testScrollBarMouseDown(void)
 
 					scrollPos = mouse.x - scrollBias - scrollBar->x;
 					assert(scrollBar->w > 0);
-					scrollPos = CLAMP(scrollPos, 0, scrollBar->w);
+					scrollPos = CLAMP((int)scrollPos, 0, (int)scrollBar->w);
 
 					if (scrollBar->thumbType == SCROLLBAR_FIXED_THUMB_SIZE)
 						length = scrollBar->w - scrollBar->thumbW;
@@ -556,7 +556,7 @@ bool testScrollBarMouseDown(void)
 					scrollPos = mouse.y - scrollBias - scrollBar->y;
 
 					assert(scrollBar->h > 0);
-					scrollPos = CLAMP(scrollPos, 0, scrollBar->h);
+					scrollPos = CLAMP((int)scrollPos, 0, (int)scrollBar->h);
 
 					length = scrollBar->h + (scrollBar->originalThumbSize - scrollBar->thumbH);
 					if (length < 1)

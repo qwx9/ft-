@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_replayer_h_
+#define _ft2_replayer_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -89,9 +90,9 @@ enum // envelope flags
 ** absolutely know what you are doing!
 */
 
-#ifdef _MSC_VER
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct xmHdr_t
 {
@@ -204,8 +205,8 @@ __attribute__ ((packed))
 #endif
 syncedChannel_t;
 
-#ifdef _MSC_VER
-#pragma pack(pop)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack off
 #endif
 
 typedef struct sample_t
@@ -357,3 +358,5 @@ extern channel_t channel[MAX_CHANNELS];
 extern song_t song;
 extern instr_t *instr[128+4];
 extern note_t *pattern[MAX_PATTERNS];
+
+#endif

@@ -376,3 +376,4 @@
     <ResourceCompile Include="..\..\src\ft2-clone.rc" />
   </ItemGroup>
 </Project>
+\ No newline at end of file

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_scopes_h_
+#define _ft2_scopes_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -55,3 +56,5 @@ typedef struct lastChInstr_t
 } lastChInstr_t;
 
 extern lastChInstr_t lastChInstr[MAX_CHANNELS];
+
+#endif

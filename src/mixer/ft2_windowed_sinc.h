@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_windowed_sinc_h_
+#define _ft2_windowed_sinc_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -25,3 +26,5 @@ extern uint64_t sincRatio1, sincRatio2;
 
 bool setupWindowedSincTables(void);
 void freeWindowedSincTables(void);
+
+#endif

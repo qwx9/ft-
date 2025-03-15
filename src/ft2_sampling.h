@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_sampling_h_
+#define _ft2_sampling_h_
 
 enum
 {
@@ -10,3 +11,5 @@ enum
 void startSampling(void);
 void stopSampling(void);
 void handleSamplingUpdates(void);
+
+#endif

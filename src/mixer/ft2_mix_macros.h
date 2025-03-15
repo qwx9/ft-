@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_mix_macros_h_
+#define _ft2_mix_macros_h_
 
 #include "../ft2_audio.h"
 #include "ft2_quadratic_spline.h"
@@ -214,23 +215,45 @@
 #define WINDOWED_SINC16_INTERPOLATION(s, f, scale) \
 { \
 	const float *t = v->fSincLUT + (((uint32_t)(f) >> SINC2_FRACSHIFT) & SINC2_FRACMASK); \
-	fSample = (( s[-7] * t[0]) + \
-	           ( s[-6] * t[1]) + \
-	           ( s[-5] * t[2]) + \
-	           ( s[-4] * t[3]) + \
-	           ( s[-3] * t[4]) + \
-	           ( s[-2] * t[5]) + \
-	           ( s[-1] * t[6]) + \
-	           (  s[0] * t[7]) + \
-	           (  s[1] * t[8]) + \
-	           (  s[2] * t[9]) + \
-	           (  s[3] * t[10]) + \
-	           (  s[4] * t[11]) + \
-	           (  s[5] * t[12]) + \
-	           (  s[6] * t[13]) + \
-	           (  s[7] * t[14]) + \
-	           (  s[8] * t[15])) * (1.0f / scale); \
+	fSample = ((s[-7] * t[0]) + \
+	           (s[-6] * t[1]) + \
+	           (s[-5] * t[2]) + \
+	           (s[-4] * t[3]) + \
+	           (s[-3] * t[4]) + \
+	           (s[-2] * t[5]) + \
+	           (s[-1] * t[6]) + \
+	           ( s[0] * t[7]) + \
+	           ( s[1] * t[8]) + \
+	           ( s[2] * t[9]) + \
+	           ( s[3] * t[10]) + \
+	           ( s[4] * t[11]) + \
+	           ( s[5] * t[12]) + \
+	           ( s[6] * t[13]) + \
+	           ( s[7] * t[14]) + \
+	           ( s[8] * t[15])) * (1.0f / scale); \
 }
+#else
+#define WINDOWED_SINC16_INTERPOLATION(s, f, scale) \
+{ \
+	const float *t = v->fSincLUT + (((uint32_t)(f) << -SINC16_FSHIFT) & SINC16_FMASK); \
+	fSample = ((s[-7] * t[0]) + \
+	           (s[-6] * t[1]) + \
+	           (s[-5] * t[2]) + \
+	           (s[-4] * t[3]) + \
+	           (s[-3] * t[4]) + \
+	           (s[-2] * t[5]) + \
+	           (s[-1] * t[6]) + \
+	           ( s[0] * t[7]) + \
+	           ( s[1] * t[8]) + \
+	           ( s[2] * t[9]) + \
+	           ( s[3] * t[10]) + \
+	           ( s[4] * t[11]) + \
+	           ( s[5] * t[12]) + \
+	           ( s[6] * t[13]) + \
+	           ( s[7] * t[14]) + \
+	           ( s[8] * t[15])) * (1.0f / scale); \
+}
+#endif
 
 #define RENDER_8BIT_SMP_S8INTRP \
 	WINDOWED_SINC8_INTERPOLATION(smpPtr, positionFrac, 128) \
@@ -334,6 +357,24 @@
 		v->volumeRampLength -= samplesToMix; \
 	}
 
+#define LIMIT_MIX_NUM_MONO_RAMP \
+	if (v->volumeRampLength == 0) \
+	{ \
+		fVolumeLDelta = 0.0f; \
+		if (v->isFadeOutVoice) \
+		{ \
+			v->active = false; /* volume ramp fadeout-voice is done, shut it down */ \
+			return; \
+		} \
+	} \
+	else \
+	{ \
+		if (samplesToMix > v->volumeRampLength) \
+			samplesToMix = v->volumeRampLength; \
+		\
+		v->volumeRampLength -= samplesToMix; \
+	}
+
 #define HANDLE_SAMPLE_END \
 	position = (int32_t)(smpPtr - base); \
 	if (position >= v->sampleEnd) \
@@ -379,3 +420,4 @@
 	{ \
 		position = (int32_t)(smpPtr - base); \
 	}
+
