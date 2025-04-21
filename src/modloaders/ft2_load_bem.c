@@ -17,9 +17,9 @@
 #define FLAG_XMPERIODS 1
 #define FLAG_LINEARSLIDES 2
 
-#ifdef _MSC_VER // please don't mess with these structs!
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__) // please don't mess with these structs!
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct bemHdr_t
 {
@@ -40,8 +40,8 @@ typedef struct bemHdr_t
 __attribute__((packed))
 #endif
 bemHdr_t;
-#ifdef _MSC_VER
-#pragma pack(pop)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack off
 #endif
 
 enum

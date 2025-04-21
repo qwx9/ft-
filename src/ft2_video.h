@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_video_h_
+#define _ft2_video_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -73,3 +74,5 @@ void leaveFullscreen(void);
 void setWindowSizeFromConfig(bool updateRenderer);
 bool recreateTexture(void);
 void toggleFullscreen(void);
+
+#endif

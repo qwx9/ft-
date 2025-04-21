@@ -17,9 +17,9 @@
 #include "../ft2_sample_ed.h"
 #include "../ft2_sysreqs.h"
 
-#ifdef _MSC_VER
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct itHdr_t
 {
@@ -108,8 +108,8 @@ __attribute__ ((packed))
 #endif
 itSmpHdr_t;
 
-#ifdef _MSC_VER
-#pragma pack(pop)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack off
 #endif
 
 static uint8_t decompBuffer[65536];

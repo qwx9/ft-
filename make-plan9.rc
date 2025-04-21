@@ -1,0 +1,23 @@
+#!/bin/rc
+rfork ne
+
+fn pragma_pack {
+	sed 's/#pragma[ 	]+pack[ 	(]*(push|1)[ 	)]*/#pragma pack on/g
+s/#pragma[ 	]+pack[ 	(]*(pop|0)[ 	)]*/#pragma pack off/g
+s/#ifdef[ 	]+_MSC_VER/#if defined(_MSC_VER) || defined(__plan9__)/g' $1
+}
+
+for(f in src/*.[ch] src/*/*.[ch]){
+	grep -s '^#pragma[ 	]+pack' $f && ! grep -s '^#pragma pack off' $f && {
+		pragma_pack $f >$f.p
+		mv $f.p $f
+	}
+}
+
+{ test -d npe -o -d /sys/include/npe || {
+	hget https://git.sr.ht/~ft/npe/archive/master.tar.gz | tar xz &&
+	cd npe-master &&
+	mk install &&
+	cd .. &&
+	mv npe-master npe
+} } && mk -f mkfile.plan9 $*

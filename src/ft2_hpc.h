@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_hpc_h_
+#define _ft2_hpc_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -23,3 +24,5 @@ void hpc_SetDurationInHz(hpc_t *hpc, double dHz); // dHz = max 4095.999inf Hz (0
 void hpc_SetDurationInMs(hpc_t *hpc, double dMs); // dMs = minimum 0.2442002442 ms
 void hpc_ResetCounters(hpc_t *hpc);
 void hpc_Wait(hpc_t *hpc);
+
+#endif

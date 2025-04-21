@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_sample_saver_h_
+#define _ft2_sample_saver_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -11,3 +12,5 @@ enum
 };
 
 void saveSample(UNICHAR *filenameU, bool saveAsRange);
+
+#endif

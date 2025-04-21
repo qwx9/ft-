@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_sample_loader_h_
+#define _ft2_sample_loader_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -28,3 +29,5 @@ extern sample_t tmpSmp;
 
 // file extensions accepted by Disk Op. in sample mode
 extern char *supportedSmpExtensions[];
+
+#endif

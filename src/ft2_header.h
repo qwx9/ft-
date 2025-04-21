@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_header_h_
+#define _ft2_header_h_
 
 #include <SDL2/SDL.h>
 #include <stdint.h>
@@ -96,3 +97,5 @@ typedef struct smpPtr_t
 {
 	int8_t *origPtr, *ptr;
 } smpPtr_t;
+
+#endif
