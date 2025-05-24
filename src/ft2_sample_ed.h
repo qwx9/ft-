@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_sample_ed_h_
+#define _ft2_sample_ed_h_
 
 #include <stdint.h>
 #include "ft2_header.h"
@@ -87,3 +88,5 @@ void testSmpEdMouseUp(void);
 void sampleLine(int32_t x1, int32_t x2, int32_t y1, int32_t y2);
 
 extern int32_t smpEd_Rx1, smpEd_Rx2;
+
+#endif

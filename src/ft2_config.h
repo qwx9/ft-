@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_config_h_
+#define _ft2_config_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -85,9 +86,9 @@ enum
 	START_IN_FULLSCR = 128,
 };
 
-#ifdef _MSC_VER
-#pragma pack(push)
-#pragma pack(1)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack on
+#pragma pack on
 #endif
 typedef struct highScoreType_t
 {
@@ -162,8 +163,8 @@ __attribute__ ((packed))
 #endif
 config_t;
 
-#ifdef _MSC_VER
-#pragma pack(pop)
+#if defined(_MSC_VER) || defined(__plan9__)
+#pragma pack off
 #endif
 
 void resetConfig(void);
@@ -277,3 +278,5 @@ void sbMasterVol(uint32_t pos);
 void sbMIDISens(uint32_t pos);
 
 extern config_t config;
+
+#endif

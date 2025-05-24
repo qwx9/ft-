@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_mix_h_
+#define _ft2_mix_h_
 
 #include <stdint.h>
 
@@ -17,6 +18,7 @@ enum
 };
 
 #define MAX_TAPS 16
+
 #define MAX_LEFT_TAPS ((MAX_TAPS/2)-1)
 #define MAX_RIGHT_TAPS (MAX_TAPS/2)
 
@@ -29,3 +31,5 @@ enum
 typedef void (*mixFunc)(void *, uint32_t, uint32_t);
 
 extern const mixFunc mixFuncTab[]; // ft2_mix.c
+
+#endif

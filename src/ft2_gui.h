@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_gui_h_
+#define _ft2_gui_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -120,3 +121,5 @@ void hideTopLeftScreen(void);
 void hideTopScreen(void);
 void showTopScreen(bool restoreScreens);
 void showBottomScreen(void);
+
+#endif

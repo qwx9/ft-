@@ -279,8 +279,10 @@ bool setMidiInputDeviceFromConfig(void)
 {
 	uint32_t i;
 
-	if (midiInDev == NULL || editor.midiConfigFileLocationU == NULL)
+	if (midiInDev == NULL || editor.midiConfigFileLocationU == NULL) {
 		goto setDefMidiInputDev;
+		//midi.inputDeviceName = NULL;
+	}
 
 	const uint32_t numDevices = getNumMidiInDevices();
 	if (numDevices == 0)
@@ -487,7 +489,12 @@ bool testMidiInputDeviceListMouseDown(void)
 	closeMidiInDevice();
 	freeMidiIn();
 	initMidiIn();
-	openMidiInDevice(midi.inputDevice);
+	if(!openMidiInDevice(midi.inputDevice)){
+		free(midi.inputDeviceName);
+		midi.inputDeviceName = NULL;
+		midi.inputDevice = -1;
+		return false;
+	}
 
 	drawMidiInputList();
 	return true;

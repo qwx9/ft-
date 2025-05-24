@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_structs_h_
+#define _ft2_structs_h_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -81,3 +82,5 @@ extern cpu_t cpu;
 extern editor_t editor;
 extern ui_t ui;
 extern cursor_t cursor;
+
+#endif

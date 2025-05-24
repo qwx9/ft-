@@ -46,3 +46,5 @@ extern const uint16_t scopeMuteBMP_Offs[16];
 extern const uint16_t scopeLenTab[16][32];
 
 extern const uint8_t defConfigData[CONFIG_FILE_SIZE];
+
+extern const uint64_t musicTimeTab52[(MAX_BPM-MIN_BPM)+1];

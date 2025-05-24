@@ -9,7 +9,7 @@ src\libflac\COPYING.txt
 rtmidi:
 src\rtmidi\LICENSE.txt
 
-Graphics, except a few bitmaps: by Magnus Högdahl
+Graphics, except a few bitmaps: by Magnus Hï¿½gdahl
 (CC BY-NC-SA 4.0):
 src\gfxdata\bmp\LICENSE.txt
 

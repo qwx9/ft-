@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ft2_scope_macros_h_
+#define _ft2_scope_macros_h_
 
 #include <stdint.h>
 #include "../ft2_header.h"
@@ -320,3 +321,5 @@
 		\
 		s->hasLooped = true; \
 	}
+
+#endif
