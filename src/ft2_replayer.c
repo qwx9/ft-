@@ -30,6 +30,8 @@
 #include "mixer/ft2_cubic_spline.h"
 #include "mixer/ft2_windowed_sinc.h"
 
+static uint64_t logTab[4*12*16], scopeLogTab[4*12*16], scopeDrawLogTab[4*12*16];
+static uint64_t amigaPeriodDiv, scopeAmigaPeriodDiv, scopeDrawAmigaPeriodDiv;
 static double dLogTab[4*12*16], dExp2MulTab[32];
 static bool bxxOverflow;
 static note_t nilPatternLine[MAX_CHANNELS];
@@ -99,7 +101,7 @@ void resetReplayerState(void)
 
 		ch = channel;
 		for (int32_t i = 0; i < song.numChannels; i++, ch++)
-			ch->status |= IS_Vol;
+			ch->status |= CS_UPDATE_VOL;
 	}
 }
 
@@ -115,7 +117,7 @@ void resetChannels(void)
 	for (int32_t i = 0; i < MAX_CHANNELS; i++, ch++)
 	{
 		ch->instrPtr = instr[0];
-		ch->status = IS_Vol;
+		ch->status = CS_UPDATE_VOL;
 		ch->oldPan = 128;
 		ch->outPan = 128;
 		ch->finalPan = 128;
@@ -232,34 +234,92 @@ int16_t getRealUsedSamples(int16_t smpNum)
 	return i+1;
 }
 
-double dLinearPeriod2Hz(int32_t period)
+double dPeriod2Hz(uint32_t period)
 {
 	period &= 0xFFFF; // just in case (actual period range is 0..65535)
 
 	if (period == 0)
 		return 0.0; // in FT2, a period of 0 results in 0Hz
 
-	const uint32_t invPeriod = ((12 * 192 * 4) - period) & 0xFFFF; // mask needed for FT2 period overflow quirk
+	if (audio.linearPeriodsFlag)
+	{
+		const uint32_t invPeriod = ((12 * 192 * 4) - period) & 0xFFFF; // mask needed for FT2 period overflow quirk
 
-	const uint32_t quotient  = invPeriod / (12 * 16 * 4);
-	const uint32_t remainder = invPeriod % (12 * 16 * 4);
+		const uint32_t quotient  = invPeriod / (12 * 16 * 4);
+		const uint32_t remainder = invPeriod % (12 * 16 * 4);
 
-	return dLogTab[remainder] * dExp2MulTab[(14-quotient) & 31]; // x = y >> ((14-quotient) & 31);
+		return dLogTab[remainder] * dExp2MulTab[(14-quotient) & 31]; // x = y >> ((14-quotient) & 31);
+	}
+	else
+	{
+		return (8363.0 * 1712.0) / (int32_t)period;
+	}
 }
 
-double dAmigaPeriod2Hz(int32_t period)
+uint64_t period2VoiceDelta(uint32_t period)
 {
 	period &= 0xFFFF; // just in case (actual period range is 0..65535)
 
 	if (period == 0)
-		return 0.0; // in FT2, a period of 0 results in 0Hz
+		return 0; // in FT2, a period of 0 results in 0Hz
 
-	return (8363.0 * 1712.0) / period;
+	if (audio.linearPeriodsFlag)
+	{
+		const uint32_t invPeriod = ((12 * 192 * 4) - period) & 0xFFFF; // mask needed for FT2 period overflow quirk
+
+		const uint32_t quotient  = invPeriod / (12 * 16 * 4);
+		const uint32_t remainder = invPeriod % (12 * 16 * 4);
+
+		return logTab[remainder] >> ((14-quotient) & 31);
+	}
+	else
+	{
+		return amigaPeriodDiv / period;
+	}
 }
 
-double dPeriod2Hz(int32_t period)
+uint64_t period2ScopeDelta(uint32_t period)
 {
-	return audio.linearPeriodsFlag ? dLinearPeriod2Hz(period) : dAmigaPeriod2Hz(period);
+	period &= 0xFFFF; // just in case (actual period range is 0..65535)
+
+	if (period == 0)
+		return 0; // in FT2, a period of 0 results in 0Hz
+
+	if (audio.linearPeriodsFlag)
+	{
+		const uint32_t invPeriod = ((12 * 192 * 4) - period) & 0xFFFF; // mask needed for FT2 period overflow quirk
+
+		const uint32_t quotient  = invPeriod / (12 * 16 * 4);
+		const uint32_t remainder = invPeriod % (12 * 16 * 4);
+
+		return scopeLogTab[remainder] >> ((14-quotient) & 31);
+	}
+	else
+	{
+		return scopeAmigaPeriodDiv / period;
+	}
+}
+
+uint64_t period2ScopeDrawDelta(uint32_t period)
+{
+	period &= 0xFFFF; // just in case (actual period range is 0..65535)
+
+	if (period == 0)
+		return 0; // in FT2, a period of 0 results in 0Hz
+
+	if (audio.linearPeriodsFlag)
+	{
+		const uint32_t invPeriod = ((12 * 192 * 4) - period) & 0xFFFF; // mask needed for FT2 period overflow quirk
+
+		const uint32_t quotient  = invPeriod / (12 * 16 * 4);
+		const uint32_t remainder = invPeriod % (12 * 16 * 4);
+
+		return scopeDrawLogTab[remainder] >> ((14-quotient) & 31);
+	}
+	else
+	{
+		return scopeDrawAmigaPeriodDiv / period;
+	}
 }
 
 // returns *exact* FT2 C-4 voice rate (depending on finetune, relativeNote and linear/Amiga period mode)
@@ -308,7 +368,7 @@ void resetVolumes(channel_t *ch)
 	ch->outVol = ch->oldVol;
 	ch->outPan = ch->oldPan;
 
-	ch->status |= IS_Vol + IS_Pan + IS_QuickVol;
+	ch->status |= CS_UPDATE_VOL + CS_UPDATE_PAN + CS_USE_QUICK_VOLRAMP;
 }
 
 void triggerInstrument(channel_t *ch)
@@ -376,7 +436,7 @@ void keyOff(channel_t *ch)
 	{
 		ch->realVol = 0;
 		ch->outVol = 0;
-		ch->status |= IS_Vol + IS_QuickVol;
+		ch->status |= CS_UPDATE_VOL + CS_USE_QUICK_VOLRAMP;
 	}
 
 	if (!(ins->panEnvFlags & ENV_ENABLED)) // FT2 logic bug!
@@ -386,22 +446,18 @@ void keyOff(channel_t *ch)
 	}
 }
 
-void calcReplayerLogTab(void) // for linear period -> hz calculation
-{
-	for (int32_t i = 0; i < 32; i++)
-		dExp2MulTab[i] = 1.0 / exp2(i); // 1/(2^i)
-
-	for (int32_t i = 0; i < 4*12*16; i++)
-		dLogTab[i] = (8363.0 * 256.0) * exp2(i / (4.0 * 12.0 * 16.0));
-}
-
 void calcReplayerVars(int32_t audioFreq)
 {
 	assert(audioFreq > 0);
 	if (audioFreq <= 0)
 		return;
 
-	audio.dHz2MixDeltaMul = (double)MIXER_FRAC_SCALE / audioFreq;
+	const double logTabMul = (UINT32_MAX+1.0) / audioFreq;
+	for (int32_t i = 0; i < 4*12*16; i++)
+		logTab[i] = (uint64_t)round(dLogTab[i] * logTabMul);
+
+	amigaPeriodDiv = (uint64_t)round((MIXER_FRAC_SCALE * (1712.0*8363.0)) / audioFreq);
+
 	audio.quickVolRampSamples = (uint32_t)round(audioFreq / (1000.0 / FT2_QUICK_VOLRAMP_MILLISECONDS));
 	audio.fQuickVolRampSamplesMul = (float)(1.0 / audio.quickVolRampSamples);
 
@@ -522,7 +578,7 @@ void triggerNote(uint8_t note, uint8_t efx, uint8_t efxData, channel_t *ch)
 		ch->outPeriod = ch->realPeriod = note2PeriodLUT[noteIndex];
 	}
 
-	ch->status |= IS_Period + IS_Vol + IS_Pan + IS_Trigger + IS_QuickVol;
+	ch->status |= CF_UPDATE_PERIOD + CS_UPDATE_VOL + CS_UPDATE_PAN + CS_TRIGGER_VOICE + CS_USE_QUICK_VOLRAMP;
 
 	if (efx == 9) // 9xx (Set Sample Offset)
 	{
@@ -560,7 +616,7 @@ static void finePitchSlideUp(channel_t *ch, uint8_t param)
 		ch->realPeriod = 1;
 
 	ch->outPeriod = ch->realPeriod;
-	ch->status |= IS_Period;
+	ch->status |= CF_UPDATE_PERIOD;
 }
 
 static void finePitchSlideDown(channel_t *ch, uint8_t param)
@@ -575,12 +631,12 @@ static void finePitchSlideDown(channel_t *ch, uint8_t param)
 		ch->realPeriod = 32000-1;
 
 	ch->outPeriod = ch->realPeriod;
-	ch->status |= IS_Period;
+	ch->status |= CF_UPDATE_PERIOD;
 }
 
 static void setPortamentoCtrl(channel_t *ch, uint8_t param)
 {
-	ch->portaSemitoneSlides = (param != 0);
+	ch->semitonePortaMode = (param != 0);
 }
 
 static void setVibratoCtrl(channel_t *ch, uint8_t param)
@@ -625,7 +681,7 @@ static void fineVolSlideUp(channel_t *ch, uint8_t param)
 		ch->realVol = 64;
 
 	ch->outVol = ch->realVol;
-	ch->status |= IS_Vol;
+	ch->status |= CS_UPDATE_VOL;
 }
 
 static void fineVolFineDown(channel_t *ch, uint8_t param)
@@ -640,7 +696,7 @@ static void fineVolFineDown(channel_t *ch, uint8_t param)
 		ch->realVol = 0;
 
 	ch->outVol = ch->realVol;
-	ch->status |= IS_Vol;
+	ch->status |= CS_UPDATE_VOL;
 }
 
 static void noteCut0(channel_t *ch, uint8_t param)
@@ -649,7 +705,7 @@ static void noteCut0(channel_t *ch, uint8_t param)
 	{
 		ch->realVol = 0;
 		ch->outVol = 0;
-		ch->status |= IS_Vol + IS_QuickVol;
+		ch->status |= CS_UPDATE_VOL + CS_USE_QUICK_VOLRAMP;
 	}
 }
 
@@ -663,22 +719,22 @@ static void patternDelay(channel_t *ch, uint8_t param)
 
 static const efxRoutine EJumpTab_TickZero[16] =
 {
-	dummy,			// 0
+	dummy,				// 0
 	finePitchSlideUp,	// 1
 	finePitchSlideDown,	// 2
 	setPortamentoCtrl,	// 3
 	setVibratoCtrl,		// 4
-	dummy,			// 5
+	dummy,				// 5
 	patternLoop,		// 6
 	setTremoloCtrl,		// 7
-	dummy,			// 8
-	dummy,			// 9
+	dummy,				// 8
+	dummy,				// 9
 	fineVolSlideUp,		// A
 	fineVolFineDown,	// B
-	noteCut0,		// C
-	dummy,			// D
+	noteCut0,			// C
+	dummy,				// D
 	patternDelay,		// E
-	dummy			// F
+	dummy				// F
 };
 
 static void E_Effects_TickZero(channel_t *ch, uint8_t param)
@@ -688,8 +744,10 @@ static void E_Effects_TickZero(channel_t *ch, uint8_t param)
 
 	if (ch->channelOff) // channel is muted, only handle certain E effects
 	{
-		     if (efx == 0x6) patternLoop(ch, param);
-		else if (efx == 0xE) patternDelay(ch, param);
+		if (efx == 0x6)
+			patternLoop(ch, param);
+		else if (efx == 0xE)
+			patternDelay(ch, param);
 
 		return;
 	}
@@ -752,7 +810,7 @@ static void setGlobalVolume(channel_t *ch, uint8_t param)
 	// update all voice volumes
 	channel_t *c = channel;
 	for (int32_t i = 0; i < song.numChannels; i++, c++)
-		c->status |= IS_Vol;
+		c->status |= CS_UPDATE_VOL;
 
 	(void)ch;
 }
@@ -907,42 +965,42 @@ static void setEnvelopePos(channel_t *ch, uint8_t param)
 
 static const efxRoutine JumpTab_TickZero[36] =
 {
-	dummy,			// 0
-	dummy,			// 1
-	dummy,			// 2
-	dummy,			// 3
-	dummy,			// 4
-	dummy,			// 5
-	dummy,			// 6
-	dummy,			// 7
-	dummy,			// 8
-	dummy,			// 9
-	dummy,			// A
+	dummy,				// 0
+	dummy,				// 1
+	dummy,				// 2
+	dummy,				// 3
+	dummy,				// 4
+	dummy,				// 5
+	dummy,				// 6
+	dummy,				// 7
+	dummy,				// 8
+	dummy,				// 9
+	dummy,				// A
 	positionJump,		// B
-	dummy,			// C
+	dummy,				// C
 	patternBreak,		// D
 	E_Effects_TickZero,	// E
-	setSpeed,		// F
+	setSpeed,			// F
 	setGlobalVolume,	// G
-	dummy,			// H
-	dummy,			// I
-	dummy,			// J
-	dummy,			// K
+	dummy,				// H
+	dummy,				// I
+	dummy,				// J
+	dummy,				// K
 	setEnvelopePos,		// L
-	dummy,			// M
-	dummy,			// N
-	dummy,			// O
-	dummy,			// P
-	dummy,			// Q
-	dummy,			// R
-	dummy,			// S
-	dummy,			// T
-	dummy,			// U
-	dummy,			// V
-	dummy,			// W
-	dummy,			// X
-	dummy,			// Y
-	dummy 			// Z
+	dummy,				// M
+	dummy,				// N
+	dummy,				// O
+	dummy,				// P
+	dummy,				// Q
+	dummy,				// R
+	dummy,				// S
+	dummy,				// T
+	dummy,				// U
+	dummy,				// V
+	dummy,				// W
+	dummy,				// X
+	dummy,				// Y
+	dummy 				// Z
 };
 
 static void handleMoreEffects_TickZero(channel_t *ch) // called even if channel is muted!
@@ -971,7 +1029,7 @@ static void v_SetVolume(channel_t *ch, uint8_t *volColumnData)
 		*volColumnData = 64;
 
 	ch->outVol = ch->realVol = *volColumnData;
-	ch->status |= IS_Vol + IS_QuickVol;
+	ch->status |= CS_UPDATE_VOL + CS_USE_QUICK_VOLRAMP;
 }
 
 static void v_FineVolSlideDown(channel_t *ch, uint8_t *volColumnData)
@@ -981,7 +1039,7 @@ static void v_FineVolSlideDown(channel_t *ch, uint8_t *volColumnData)
 		*volColumnData = 0;
 
 	ch->outVol = ch->realVol = *volColumnData;
-	ch->status |= IS_Vol;
+	ch->status |= CS_UPDATE_VOL;
 }
 
 static void v_FineVolSlideUp(channel_t *ch, uint8_t *volColumnData)
@@ -991,7 +1049,7 @@ static void v_FineVolSlideUp(channel_t *ch, uint8_t *volColumnData)
 		*volColumnData = 64;
 
 	ch->outVol = ch->realVol = *volColumnData;
-	ch->status |= IS_Vol;
+	ch->status |= CS_UPDATE_VOL;
 }
 
 static void v_SetPan(channel_t *ch, uint8_t *volColumnData)
@@ -999,7 +1057,7 @@ static void v_SetPan(channel_t *ch, uint8_t *volColumnData)
 	*volColumnData <<= 4;
 
 	ch->outPan = *volColumnData;
-	ch->status |= IS_Pan;
+	ch->status |= CS_UPDATE_PAN;
 }
 
 // -- non-tick-zero volume column effects --
@@ -1011,7 +1069,7 @@ static void v_VolSlideDown(channel_t *ch)
 		newVol = 0;
 
 	ch->outVol = ch->realVol = newVol;
-	ch->status |= IS_Vol;
+	ch->status |= CS_UPDATE_VOL;
 }
 
 static void v_VolSlideUp(channel_t *ch)
@@ -1021,7 +1079,7 @@ static void v_VolSlideUp(channel_t *ch)
 		newVol = 64;
 
 	ch->outVol = ch->realVol = newVol;
-	ch->status |= IS_Vol;
+	ch->status |= CS_UPDATE_VOL;
 }
 
 static void v_Vibrato(channel_t *ch)
@@ -1040,7 +1098,7 @@ static void v_PanSlideLeft(channel_t *ch)
 		tmp16 = 0;
 
 	ch->outPan = (uint8_t)tmp16;
-	ch->status |= IS_Pan;
+	ch->status |= CS_UPDATE_PAN;
 }
 
 static void v_PanSlideRight(channel_t *ch)
@@ -1050,7 +1108,7 @@ static void v_PanSlideRight(channel_t *ch)
 		tmp16 = 255;
 
 	ch->outPan = (uint8_t)tmp16;
-	ch->status |= IS_Pan;
+	ch->status |= CS_UPDATE_PAN;
 }
 
 static void v_Portamento(channel_t *ch)
@@ -1090,7 +1148,7 @@ static const volColumnEfxRoutine2 VJumpTab_TickZero[16] =
 static void setPan(channel_t *ch, uint8_t param)
 {
 	ch->outPan = param;
-	ch->status |= IS_Pan;
+	ch->status |= CS_UPDATE_PAN;
 }
 
 static void setVol(channel_t *ch, uint8_t param)
@@ -1099,7 +1157,7 @@ static void setVol(channel_t *ch, uint8_t param)
 		param = 64;
 
 	ch->outVol = ch->realVol = param;
-	ch->status |= IS_Vol + IS_QuickVol;
+	ch->status |= CS_UPDATE_VOL + CS_USE_QUICK_VOLRAMP;
 }
 
 static void extraFinePitchSlide(channel_t *ch, uint8_t param)
@@ -1121,7 +1179,7 @@ static void extraFinePitchSlide(channel_t *ch, uint8_t param)
 			newPeriod = 1;
 
 		ch->outPeriod = ch->realPeriod = newPeriod;
-		ch->status |= IS_Period;
+		ch->status |= CF_UPDATE_PERIOD;
 	}
 	else if (slideType == 2) // slide down
 	{
@@ -1137,7 +1195,7 @@ static void extraFinePitchSlide(channel_t *ch, uint8_t param)
 			newPeriod = 32000-1;
 
 		ch->outPeriod = ch->realPeriod = newPeriod;
-		ch->status |= IS_Period;
+		ch->status |= CF_UPDATE_PERIOD;
 	}
 }
 
@@ -1278,7 +1336,7 @@ static void getNewNote(channel_t *ch, const note_t *p)
 		if (ch->efxData > 0) // we have an arpeggio running, set period back
 		{
 			ch->outPeriod = ch->realPeriod;
-			ch->status |= IS_Period;
+			ch->status |= CF_UPDATE_PERIOD;
 		}
 	}
 	else
@@ -1287,7 +1345,7 @@ static void getNewNote(channel_t *ch, const note_t *p)
 		if ((ch->efx == 4 || ch->efx == 6) && (p->efx != 4 && p->efx != 6))
 		{
 			ch->outPeriod = ch->realPeriod;
-			ch->status |= IS_Period;
+			ch->status |= CF_UPDATE_PERIOD;
 		}
 	}
 
@@ -1399,7 +1457,7 @@ void updateVolPanAutoVib(channel_t *ch)
 			}
 		}
 
-		ch->status |= IS_Vol; // always update volume, even if fadeout has reached 0
+		ch->status |= CS_UPDATE_VOL; // always update volume, even if fadeout has reached 0
 	}
 	
 	// handle volumes
@@ -1500,7 +1558,7 @@ void updateVolPanAutoVib(channel_t *ch)
 			fVol = vol * (1.0f / (64.0f * 64.0f * 32768.0f));
 			fVol *= fEnvVal * (1.0f / 64.0f); // volume envelope value
 
-			ch->status |= IS_Vol; // update mixer vol every tick when vol envelope is enabled
+			ch->status |= CS_UPDATE_VOL; // update mixer vol every tick when vol envelope is enabled
 		}
 		else
 		{
@@ -1614,7 +1672,7 @@ void updateVolPanAutoVib(channel_t *ch)
 
 		ch->finalPan = (uint8_t)CLAMP(newPan, 0, 255); // FT2 doesn't clamp the pan, but let's do it anyway
 
-		ch->status |= IS_Pan; // update pan every tick because pan envelope is enabled
+		ch->status |= CS_UPDATE_PAN; // update pan every tick because pan envelope is enabled
 	}
 	else
 	{
@@ -1681,7 +1739,7 @@ void updateVolPanAutoVib(channel_t *ch)
 #endif
 
 		ch->finalPeriod = tmpPeriod;
-		ch->status |= IS_Period;
+		ch->status |= CF_UPDATE_PERIOD;
 	}
 	else
 	{
@@ -1691,14 +1749,14 @@ void updateVolPanAutoVib(channel_t *ch)
 		if (midi.enable)
 		{
 			ch->finalPeriod -= ch->midiPitch;
-			ch->status |= IS_Period;
+			ch->status |= CF_UPDATE_PERIOD;
 		}
 #endif
 	}
 }
 
 // for arpeggio and portamento (semitone-slide mode)
-static uint16_t adjustPeriodFromNote(uint16_t period, uint8_t arpNote, channel_t *ch)
+static uint16_t period2NotePeriod(uint16_t period, uint8_t outputNoteOffset, channel_t *ch)
 {
 	int32_t tmpPeriod;
 
@@ -1725,7 +1783,7 @@ static uint16_t adjustPeriodFromNote(uint16_t period, uint8_t arpNote, channel_t
 			loPeriod = (tmpPeriod - fineTune) & ~15;
 	}
 
-	tmpPeriod = loPeriod + fineTune + (arpNote << 4);
+	tmpPeriod = loPeriod + fineTune + (outputNoteOffset << 4);
 	if (tmpPeriod >= (8*12*16+15)-1) // FT2 bug, should've been 10*12*16+16 (also notice the +2 difference)
 		tmpPeriod = (8*12*16+16)-1;
 
@@ -1761,13 +1819,13 @@ static void doVibrato(channel_t *ch)
 	else
 		ch->outPeriod = ch->realPeriod + tmpVib;
 
-	ch->status |= IS_Period;
+	ch->status |= CF_UPDATE_PERIOD;
 	ch->vibratoPos += ch->vibratoSpeed;
 }
 
 static void arpeggio(channel_t *ch, uint8_t param)
 {
-	uint8_t note;
+	uint8_t noteOffset;
 
 	const uint8_t tick = arpeggioTab[song.tick & 31];
 	if (tick == 0)
@@ -1777,14 +1835,14 @@ static void arpeggio(channel_t *ch, uint8_t param)
 	else
 	{
 		if (tick == 1)
-			note = param >> 4;
+			noteOffset = param >> 4;
 		else
-			note = param & 0x0F; // tick 2
+			noteOffset = param & 0x0F; // tick 2
 
-		ch->outPeriod = adjustPeriodFromNote(ch->realPeriod, note, ch);
+		ch->outPeriod = period2NotePeriod(ch->realPeriod, noteOffset, ch);
 	}
 
-	ch->status |= IS_Period;
+	ch->status |= CF_UPDATE_PERIOD;
 }
 
 static void pitchSlideUp(channel_t *ch, uint8_t param)
@@ -1799,7 +1857,7 @@ static void pitchSlideUp(channel_t *ch, uint8_t param)
 		ch->realPeriod = 1;
 
 	ch->outPeriod = ch->realPeriod;
-	ch->status |= IS_Period;
+	ch->status |= CF_UPDATE_PERIOD;
 }
 
 static void pitchSlideDown(channel_t *ch, uint8_t param)
@@ -1814,7 +1872,7 @@ static void pitchSlideDown(channel_t *ch, uint8_t param)
 		ch->realPeriod = 32000-1;
 
 	ch->outPeriod = ch->realPeriod;
-	ch->status |= IS_Period;
+	ch->status |= CF_UPDATE_PERIOD;
 }
 
 static void portamento(channel_t *ch, uint8_t param)
@@ -1841,12 +1899,12 @@ static void portamento(channel_t *ch, uint8_t param)
 		}
 	}
 
-	if (ch->portaSemitoneSlides)
-		ch->outPeriod = adjustPeriodFromNote(ch->realPeriod, 0, ch);
+	if (ch->semitonePortaMode)
+		ch->outPeriod = period2NotePeriod(ch->realPeriod, 0, ch);
 	else
 		ch->outPeriod = ch->realPeriod;
 
-	ch->status |= IS_Period;
+	ch->status |= CF_UPDATE_PERIOD;
 
 	(void)param;
 }
@@ -1932,7 +1990,7 @@ static void tremolo(channel_t *ch, uint8_t param)
 	}
 
 	ch->outVol = (uint8_t)tremVol;
-	ch->status |= IS_Vol;
+	ch->status |= CS_UPDATE_VOL;
 
 	ch->tremoloPos += ch->tremoloSpeed;
 }
@@ -1961,7 +2019,7 @@ static void volSlide(channel_t *ch, uint8_t param)
 	}
 
 	ch->outVol = ch->realVol = newVol;
-	ch->status |= IS_Vol;
+	ch->status |= CS_UPDATE_VOL;
 }
 
 static void globalVolSlide(channel_t *ch, uint8_t param)
@@ -1993,7 +2051,7 @@ static void globalVolSlide(channel_t *ch, uint8_t param)
 
 	channel_t *c = channel;
 	for (int32_t i = 0; i < song.numChannels; i++, c++)
-		c->status |= IS_Vol;
+		c->status |= CS_UPDATE_VOL;
 }
 
 static void keyOffCmd(channel_t *ch, uint8_t param)
@@ -2026,7 +2084,7 @@ static void panningSlide(channel_t *ch, uint8_t param)
 	}
 
 	ch->outPan = (uint8_t)newPan;
-	ch->status |= IS_Pan;
+	ch->status |= CS_UPDATE_PAN;
 }
 
 static void tremor(channel_t *ch, uint8_t param)
@@ -2056,7 +2114,7 @@ static void tremor(channel_t *ch, uint8_t param)
 
 	ch->tremorPos = tremorSign | tremorData;
 	ch->outVol = (tremorSign == 0x80) ? ch->realVol : 0;
-	ch->status |= IS_Vol + IS_QuickVol;
+	ch->status |= CS_UPDATE_VOL + CS_USE_QUICK_VOLRAMP;
 }
 
 static void retrigNote(channel_t *ch, uint8_t param)
@@ -2076,7 +2134,7 @@ static void noteCut(channel_t *ch, uint8_t param)
 	if ((uint8_t)(song.speed-song.tick) == param)
 	{
 		ch->outVol = ch->realVol = 0;
-		ch->status |= IS_Vol + IS_QuickVol;
+		ch->status |= CS_UPDATE_VOL + CS_USE_QUICK_VOLRAMP;
 	}
 }
 
@@ -2805,6 +2863,22 @@ void closeReplayer(void)
 	freeWindowedSincTables();
 }
 
+void calcMiscReplayerVars(void)
+{
+	for (int32_t i = 0; i < 32; i++)
+		dExp2MulTab[i] = 1.0 / exp2(i); // 1/(2^i)
+
+	for (int32_t i = 0; i < 4*12*16; i++)
+	{
+		dLogTab[i] = (8363.0 * 256.0) * exp2(i / (4.0 * 12.0 * 16.0));
+		scopeLogTab[i] = (uint64_t)round(dLogTab[i] * (SCOPE_FRAC_SCALE / SCOPE_HZ));
+		scopeDrawLogTab[i] = (uint64_t)round(dLogTab[i] * (SCOPE_FRAC_SCALE / (C4_FREQ/2.0)));
+	}
+
+	scopeAmigaPeriodDiv = (uint64_t)round((SCOPE_FRAC_SCALE * (1712.0*8363.0)) / SCOPE_HZ);
+	scopeDrawAmigaPeriodDiv = (uint64_t)round((SCOPE_FRAC_SCALE * (1712.0*8363.0)) / (C4_FREQ/2.0));
+}
+
 bool setupReplayer(void)
 {
 	for (int32_t i = 0; i < MAX_PATTERNS; i++)
@@ -3034,7 +3108,7 @@ void playSample(uint8_t chNum, uint8_t insNum, uint8_t smpNum, uint8_t note, uin
 
 	unlockAudio();
 
-	while (ch->status & IS_Trigger); // wait for sample to latch in mixer
+	while (ch->status & CS_TRIGGER_VOICE); // wait for voice to trigger in mixer
 
 	// for sampling playback line in Smp. Ed.
 	editor.curPlayInstr = editor.curInstr;
@@ -3097,7 +3171,7 @@ void playRange(uint8_t chNum, uint8_t insNum, uint8_t smpNum, uint8_t note, uint
 
 	unlockAudio();
 
-	while (ch->status & IS_Trigger); // wait for sample to latch in mixer
+	while (ch->status & CS_TRIGGER_VOICE); // wait for voice to trigger in mixer
 
 	// for sampling playback line in Smp. Ed.
 	editor.curPlayInstr = editor.curInstr;
@@ -3122,7 +3196,7 @@ void stopVoices(void)
 		ch->smpPtr = NULL;
 		ch->instrNum = 0;
 		ch->instrPtr = instr[0]; // important: set instrument pointer to instr 0 (placeholder instrument)
-		ch->status = IS_Vol;
+		ch->status = CS_UPDATE_VOL;
 		ch->realVol = 0;
 		ch->outVol = 0;
 		ch->oldVol = 0;
@@ -3143,6 +3217,7 @@ void stopVoices(void)
 	editor.curPlaySmp = 255;
 
 	stopAllScopes();
+	resetAudioDither();
 
 	// wait for scope thread to finish, making sure pointers aren't illegal
 	while (editor.scopeThreadBusy);

@@ -14,14 +14,14 @@
 	uint32_t width = x + w; \
 	int32_t sample; \
 	int32_t position = s->position; \
-	uint64_t positionFrac = 0;
+	uint64_t positionFrac = s->positionFrac;
 
 #define SCOPE_INIT_BIDI \
 	const uint32_t color = video.palette[PAL_PATTEXT]; \
 	uint32_t width = x + w; \
 	int32_t sample; \
 	int32_t actualPos, position = s->position; \
-	uint64_t positionFrac = 0; \
+	uint64_t positionFrac = s->positionFrac; \
 	bool samplingBackwards = s->samplingBackwards;
 
 #define LINED_SCOPE_INIT \

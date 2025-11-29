@@ -22,8 +22,8 @@
 #define SCOPE_INTRP_WIDTH_BITS 2 /* log2(SCOPE_INTRP_WIDTH) */
 #define SCOPE_INTRP_SCALE 32768
 #define SCOPE_INTRP_SCALE_BITS 15 /* log2(SCOPE_INTRP_SCALE) */
-#define SCOPE_INTRP_PHASES 256 /* enough for the scopes */
-#define SCOPE_INTRP_PHASES_BITS 8 /* log2(SCOPE_INTRP_PHASES) */
+#define SCOPE_INTRP_PHASES 512 /* enough for the scopes */
+#define SCOPE_INTRP_PHASES_BITS 9 /* log2(SCOPE_INTRP_PHASES) */
 
 int32_t getSamplePositionFromScopes(uint8_t ch);
 void stopAllScopes(void);

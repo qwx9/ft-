@@ -82,7 +82,7 @@ static void setChannelMute(int32_t chNr, bool off)
 		ch->outPan = 128;
 		ch->oldPan = 128;
 		ch->finalPan = 128;
-		ch->status = IS_Vol;
+		ch->status = CS_UPDATE_VOL;
 
 		ch->keyOff = true; // non-FT2 bug fix for stuck piano keys
 	}
@@ -433,9 +433,6 @@ void drawScopes(void)
 			// scope is active
 			scope[i].wasCleared = false;
 
-			// get relative voice Hz (in relation to C4/2 rate)
-			s.drawDelta = (uint64_t)(scope[i].delta * ((double)SCOPE_HZ / ((double)C4_FREQ / 2.0)));
-
 			// clear scope background
 			clearRect(scopeXOffs, scopeYOffs, scopeDrawLen, SCOPE_HEIGHT);
 
@@ -488,13 +485,16 @@ void handleScopesFromChQueue(chSyncData_t *chSyncData, uint8_t *scopeUpdateStatu
 	{
 		const uint8_t status = scopeUpdateStatus[i];
 
-		if (status & IS_Vol)
+		if (status & CS_UPDATE_VOL)
 			sc->volume = ch->scopeVolume;
 
-		if (status & IS_Period)
-			sc->delta = (uint64_t)(dPeriod2Hz(ch->period) * (SCOPE_FRAC_SCALE / (double)SCOPE_HZ));
+		if (status & CF_UPDATE_PERIOD)
+		{
+			sc->delta = period2ScopeDelta(ch->period);
+			sc->drawDelta = period2ScopeDrawDelta(ch->period);
+		}
 
-		if (status & IS_Trigger)
+		if (status & CS_TRIGGER_VOICE)
 		{
 			if (instr[ch->instrNum] != NULL)
 			{
